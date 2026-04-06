@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Security Brightness</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      font-family: Arial, sans-serif;
+      color: #0f172a;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 960px;
+      padding: 24px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 28px;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.14);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 36px 32px 16px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3rem);
+      line-height: 1.05;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      max-width: 720px;
+      margin: 18px auto 0;
+      color: #475569;
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      padding: 28px 32px;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .card:first-of-type {
+      border-top: none;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .note {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .upload-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-input {
+      flex: 1 1 260px;
+      min-width: 220px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 0.95rem;
+    }
+
+    .button {
+      min-width: 180px;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(102, 126, 234, 0.25);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill.high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .pill.medium {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .pill.low {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .results {
+      display: grid;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .result-card {
+      padding: 22px 24px;
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .result-card.high {
+      border-left: 4px solid #dc2626;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .result-card.medium {
+      border-left: 4px solid #d97706;
+      background: #fffbeb;
+      color: #92400e;
+    }
+
+    .result-card.low {
+      border-left: 4px solid #16a34a;
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    .result-card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .result-list {
+      margin: 0;
+      padding-left: 20px;
+      list-style-type: disc;
+    }
+
+    .result-list li {
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .result-text {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .result-meta {
+      font-size: 0.95rem;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .result-snippet {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      background: rgba(15, 23, 42, 0.04);
+      padding: 14px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 10px;
+    }
+
+    .suggestion {
+      font-size: 0.95rem;
+      color: #334155;
+      margin: 0 0 10px;
+    }
+
+    .issue-button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #0f172a;
+      color: white;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .issue-button:hover {
+      transform: translateY(-1px);
+      background-color: #1e293b;
+    }
+
+    .safe-state {
+      padding: 22px;
+      border-radius: 20px;
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 700;
+      border: 1px solid rgba(22, 163, 74, 0.15);
+    }
+
+    @media (max-width: 720px) {
+      .section-title,
+      .upload-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="wrapper">
+  <div class="container">
+    <div class="hero">
+      <h1>Security Brightness 🔐</h1>
+      <p>AI Security Scanner</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <h2>Upload area</h2>
+        <span class="note">Supported: .txt, .log, .js</span>
+      </div>
+      <div class="upload-row">
+        <input id="fileInput" class="file-input" type="file" accept=".txt,.log,.js,text/plain,application/javascript" />
+        <button type="button" class="button" onclick="scan()">Scan file contents</button>
+      </div>
+      <div id="fileStatus" class="note" style="margin-top: 12px;">Select a file and click Scan.</div>
+    </div>
+
+    <div class="card" id="summaryCard">
+      <div class="section-title">
+        <h2>Summary</h2>
+        <span class="note" id="summaryNote">Upload a file to start scanning.</span>
+      </div>
+      <div class="summary-grid" id="summary"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <h2>Scan results</h2>
+        <span class="note">Issues are grouped by severity and include exact line location, snippet, and fix guidance.</span>
+      </div>
+      <div id="result" class="results"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let scanState = { text: "", highRisk: [], mediumRisk: [], lowRisk: [] };
+
+function updateFileStatus() {
+  const fileInput = document.getElementById("fileInput");
+  const fileStatus = document.getElementById("fileStatus");
+  const file = fileInput.files[0];
+  fileStatus.textContent = file ? `Selected file: ${file.name}` : "Select a file and click Scan.";
+}
+
+function scan() {
+  const fileInput = document.getElementById("fileInput");
+  const file = fileInput.files[0];
+  const resultArea = document.getElementById("result");
+  const summaryArea = document.getElementById("summary");
+  const summaryNote = document.getElementById("summaryNote");
+  const fileStatus = document.getElementById("fileStatus");
+
+  resultArea.innerHTML = "";
+  summaryArea.innerHTML = "";
+  summaryNote.textContent = "Scanning...";
+  updateFileStatus();
+
+  if (!file) {
+    summaryNote.textContent = "Select a file before scanning.";
+    resultArea.innerHTML = `<div class="result-card high"><h3>No file selected</h3><p>Please upload a .txt, .log, or .js file to scan its contents.</p></div>`;
+    return;
+  }
+
+  fileStatus.textContent = `Selected file: ${file.name}`;
+
+  const startTime = Date.now();
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const scanTime = Date.now() - startTime;
+    analyzeText(event.target.result, file.name, scanTime);
+  };
+  reader.onerror = function() {
+    summaryNote.textContent = "Unable to read the selected file.";
+    fileStatus.textContent = "File read failed.";
+    resultArea.innerHTML = `<div class="result-card high"><h3>Read error</h3><p>Unable to read the selected file. Try another file.</p></div>`;
+  };
+  reader.readAsText(file);
+}
+
+function getLineColumn(text, index) {
+  const before = text.slice(0, index);
+  const lines = before.split(/\r\n|\n/);
+  return {
+    line: lines.length,
+    column: lines[lines.length - 1].length + 1,
+  };
+}
+
+function getSnippet(text, index) {
+  const start = Math.max(0, index - 28);
+  const end = Math.min(text.length, index + 84);
+  const slice = text.slice(start, end).replace(/\r\n|\n/g, ' [newline] ');
+  return `${start > 0 ? '...' : ''}${slice}${end < text.length ? '...' : ''}`;
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, function(match) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[match];
+  });
+}
+
+function reportMatch(state, severity, message, match, suggestion) {
+  const position = getLineColumn(state.text, match.index);
+  if (!state[severity][message]) {
+    state[severity][message] = { suggestion, matches: [] };
+  }
+  if (state[severity][message].matches.length < 5) {
+    state[severity][message].matches.push({
+      line: position.line,
+      column: position.column,
+      snippet: match[0],
+    });
+  }
+}
+
+function analyzeText(text, fileName, scanTime) {
+  const normalized = text.toLowerCase();
+  scanState = { text, highRisk: {}, mediumRisk: {}, lowRisk: {} };
+
+  // Exclude the patterns array from scanning to avoid false positives
+  let scanText = text;
+  const patternsStart = scanText.indexOf('patterns = [');
+  if (patternsStart !== -1) {
+    const patternsEnd = scanText.indexOf('];', patternsStart);
+    if (patternsEnd !== -1) {
+      scanText = scanText.slice(0, patternsStart) + scanText.slice(patternsEnd + 2);
+    }
+  }
+
+  const patterns = [
+    { regex: /\bsk-[A-Za-z0-9]{48}\b/g, severity: 'highRisk', message: 'OpenAI API key detected.', suggestion: 'Move this key to secure storage and rotate it immediately.' },
+    { regex: /\b(?:AKIA|ASIA|AGPA|AIDA)[0-9A-Z]{16}\b/g, severity: 'highRisk', message: 'AWS access key detected.', suggestion: 'Remove this key from source control and use IAM roles or environment variables.' },
+    { regex: /\bAIza[0-9A-Za-z-_]{35}\b/g, severity: 'highRisk', message: 'Google API key detected.', suggestion: 'Restrict or rotate this key and avoid hardcoding it.' },
+    { regex: /\b(?:ghp_|github_pat_)[A-Za-z0-9_]{36,255}\b/g, severity: 'highRisk', message: 'GitHub personal access token detected.', suggestion: 'Revoke this token and store credentials outside of code.' },
+    { regex: /\bsk_test_[A-Za-z0-9]{24}\b/g, severity: 'highRisk', message: 'Stripe test key detected.', suggestion: 'Remove payment API keys from checked-in files.' },
+    { regex: /\bsk_live_[A-Za-z0-9]{24}\b/g, severity: 'highRisk', message: 'Stripe live key detected.', suggestion: 'Remove live keys from source and use safe configuration management.' },
+    { regex: /\beyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/g, severity: 'highRisk', message: 'JWT token pattern detected.', suggestion: 'Remove tokens from source and secure them separately.' },
+    { regex: /(?:api[_-]?key|access[_-]?key|secret|token|password|pwd|pass|client[_-]?secret)\s*(?:=|:)\s*['"][A-Za-z0-9\-_=]{16,}['"]/gi, severity: 'highRisk', message: 'Hardcoded credential or secret detected.', suggestion: 'Replace this with a secure value reference and remove it from code.' },
+    { regex: /\b(?:-----BEGIN PRIVATE KEY-----|-----BEGIN RSA PRIVATE KEY-----|-----BEGIN OPENSSH PRIVATE KEY-----)\b/g, severity: 'highRisk', message: 'Private key material detected.', suggestion: 'Keep private keys out of source files and use secure key storage.' },
+    { regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, severity: 'mediumRisk', message: 'Email address detected.', suggestion: 'Remove personal email addresses from shared files.' },
+    { regex: /\b[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?]{12,}\b/g, severity: 'mediumRisk', message: 'Strong password-like string detected.', suggestion: 'Avoid embedding passwords; use a secret manager instead.', filter: (value, match, text) => /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /\b(?:password|token|key|secret|api_key|access_key|client_secret|auth|credential)\b/i.test(text.slice(Math.max(0, match.index-100), match.index + value.length + 100)) && !/\b(?:transform|background|color|font|margin|padding|border|width|height|px|em|rem|vh|vw|<|>|'|"|class|id|style)\b/i.test(text.slice(Math.max(0, match.index-50), match.index + value.length + 50)) },
+    { regex: /(https?:\/\/[^"]+)\?[^&\s]*\b(?:key|token|secret|password|api_key|auth)\b[^&\s]*/gi, severity: 'mediumRisk', message: 'URL with sensitive parameters detected.', suggestion: 'Move secrets out of URL query strings.' },
+    { regex: /\b(?:ssn|social security|credit card|ccv|cvv|dob|date of birth)\b/g, severity: 'highRisk', message: 'Potential sensitive personal data detected.', suggestion: 'Review and remove any personal identifiers from shared data.' },
+    { regex: /\b\+?\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, severity: 'mediumRisk', message: 'Phone number detected.', suggestion: 'Avoid storing phone numbers in plain text within source files.' },
+    { regex: /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, severity: 'mediumRisk', message: 'IP address detected.', suggestion: 'Verify whether this IP address should be publicly exposed.' },
+    { regex: /ignore previous instructions|disregard (?:the )?above|forget (?:the )?above|override.*policy|bypass.*safety/gi, severity: 'highRisk', message: 'Prompt injection pattern detected.', suggestion: 'Do not let untrusted text override intended behavior.' },
+    { regex: /\b(?:\.env|dotenv|credentials?)\b/g, severity: 'lowRisk', message: 'Check whether secrets are stored in environment files and avoid leaking .env content.', suggestion: 'Keep credentials in protected environment variables, not in source files.' },
+    { regex: /\b(?:execute|run|search the web|open file|send email|download|upload|delete|install)\b/g, severity: 'lowRisk', message: 'Review tool access and command execution instructions carefully.', suggestion: 'Confirm that tool and command references are safe and intentional.' },
+    { regex: /(?:system|assistant) instructions?.*user input|user input?.*system instructions/gi, severity: 'lowRisk', message: 'Keep user input separate from system instructions to reduce prompt injection risk.', suggestion: 'Keep system-level guidance distinct from user-provided content.' },
+    { regex: /(https?:\/\/[^"]+)\b/g, severity: 'lowRisk', message: 'Verify whether referenced URLs expose internal or private resources.', suggestion: 'Check whether the referenced address should remain internal only.', filter: value => /\b(?:localhost|127\.0\.0\.1|internal|private)\b/.test(value.toLowerCase()) },
+  ];
+
+  patterns.forEach(pattern => {
+    pattern.regex.lastIndex = 0;
+    let match;
+    while ((match = pattern.regex.exec(scanText)) !== null) {
+      const value = match[0];
+      if (pattern.filter && !pattern.filter(value, match, scanText)) {
+        continue;
+      }
+      reportMatch(scanState, pattern.severity, pattern.message, match, pattern.suggestion);
+      if (match.index === pattern.regex.lastIndex) {
+        pattern.regex.lastIndex++;
+      }
+    }
+  });
+
+  displayResults(scanState, fileName, scanTime);
+}
+
+function displayResults({ highRisk, mediumRisk, lowRisk }, fileName = '', scanTime = 0) {
+  const resultArea = document.getElementById("result");
+  const summaryArea = document.getElementById("summary");
+  const summaryNote = document.getElementById("summaryNote");
+  const total = Object.keys(highRisk).length + Object.keys(mediumRisk).length + Object.keys(lowRisk).length;
+
+  summaryNote.textContent = total ? (scanTime ? `Scan complete in ${scanTime} ms — ${total} findings found. File scanned: ${fileName}` : `${total} findings found.`) : (scanTime ? `Scan complete in ${scanTime} ms — no obvious issues found. File scanned: ${fileName}` : "No obvious issues found.");
+  summaryArea.innerHTML = `
+    <span class="pill high">High ${Object.keys(highRisk).length}</span>
+    <span class="pill medium">Medium ${Object.keys(mediumRisk).length}</span>
+    <span class="pill low">Low ${Object.keys(lowRisk).length}</span>
+  `;
+
+  let html = "";
+  html += renderCategory("high", "🔴 High Risk", highRisk);
+  html += renderCategory("medium", "🟡 Medium Risk", mediumRisk);
+  html += renderCategory("low", "🟢 Low Risk", lowRisk);
+
+  if (!html) {
+    html = `<div class="result-card low"><h3>? No obvious issues detected</h3><p>Still re-scan after edits and review results manually.</p></div>`;
+  }
+
+  resultArea.innerHTML = html;
+}
+
+function renderCategory(style, title, items) {
+  const keys = Object.keys(items);
+  if (!keys.length) return "";
+  return `
+    <div class="result-card ${style}">
+      <h3>${title} (${keys.length})</h3>
+      <ul class="result-list">
+        ${keys.map(message => {
+          const item = items[message];
+          const matchCount = item.matches.length;
+          const lines = [...new Set(item.matches.map(m => m.line))].join(', ');
+          const extra = matchCount >= 5 ? ' (showing first 5)' : '';
+          return `
+            <li>
+              <div class="result-text">${escapeHtml(message)} (${matchCount} matches)</div>
+              <div class="result-meta">Lines: ${lines}${extra}</div>
+              ${item.matches.slice(0, 1).map(m => `<div class="result-snippet">Example match: "${escapeHtml(m.snippet)}"</div>`).join('')}
+              <p class="suggestion">Suggestion: ${escapeHtml(item.suggestion)}</p>
+              <button type="button" class="issue-button" data-severity="${style}Risk" data-message="${encodeURIComponent(message)}">Mark as fixed</button>
+            </li>
+          `;
+        }).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function removeIssue(severity, encodedMessage) {
+  const message = decodeURIComponent(encodedMessage);
+  if (!scanState[severity] || !scanState[severity][message]) return;
+  delete scanState[severity][message];
+  displayResults(scanState);
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+  const fileInput = document.getElementById("fileInput");
+  fileInput.addEventListener("change", updateFileStatus);
+  updateFileStatus();
+
+  const resultArea = document.getElementById("result");
+  resultArea.addEventListener("click", function(event) {
+    const button = event.target.closest(".issue-button");
+    if (!button) return;
+    removeIssue(button.dataset.severity, Number(button.dataset.index));
+  });
+});
+</script>
+
+</body>
+</html>
+
+
+
