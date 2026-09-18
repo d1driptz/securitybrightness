@@ -1,0 +1,20 @@
+[
+  {
+    "timestamp": "2026-09-18T14:16:04.444593Z",
+    "event_type": "file_access",
+    "source": "demo_app",
+    "action": "read",
+    "target": "example.txt",
+    "details": {},
+    "decision": "allow"
+  },
+  {
+    "timestamp": "2026-09-18T14:16:04.447245Z",
+    "event_type": "system_action",
+    "source": "demo_app",
+    "action": "unknown_action",
+    "target": "system_resource",
+    "details": {},
+    "decision": "ask"
+  }
+]

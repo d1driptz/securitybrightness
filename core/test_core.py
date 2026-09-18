@@ -1,7 +1,5 @@
-from events import SecurityEvent
-from permissions import request_permission
-
-
+from core.events import SecurityEvent
+from core.security import process_event
 def run_tests():
     # A normal read should be allowed.
     read_event = SecurityEvent.create(
@@ -11,7 +9,7 @@ def run_tests():
         target="example.txt",
     )
 
-    result = request_permission(read_event)
+    result = process_event(read_event)
 
     print("READ TEST")
     print("Decision:", result.decision.value)
@@ -26,7 +24,7 @@ def run_tests():
         target="system_resource",
     )
 
-    result = request_permission(unknown_event)
+    result = process_event(unknown_event)
 
     print("UNKNOWN ACTION TEST")
     print("Decision:", result.decision.value)
