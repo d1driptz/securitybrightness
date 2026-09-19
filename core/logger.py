@@ -16,6 +16,7 @@ def log_event(event, result):
         "decision": result.decision.value,
         "decision_source": result.decision_source,
         "policy_rule": result.policy_rule,
+        "human_control": result.human_control,
         "reason": result.reason,
     }
 
