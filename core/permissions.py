@@ -4,6 +4,7 @@ from .approval import TerminalApprovalProvider
 from .events import SecurityEvent
 from .human_control import HumanControlLevel, classify
 from .policy import Decision, evaluate
+from .scopes import check_scope
 
 
 @dataclass
@@ -27,6 +28,8 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
     policy_result = evaluate(event)
     control = classify(event, policy_result)
     decision = policy_result.decision
+    scope_result = check_scope(event)
+    identity_participates = bool(event.details.get("application_id"))
 
     needs_approval = control.level in {
         HumanControlLevel.APPROVAL,
@@ -36,6 +39,13 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
     if decision == Decision.DENY:
         reason = policy_result.reason
         decision_source = "policy"
+    elif identity_participates and not scope_result.granted:
+        decision = Decision.DENY
+        reason = (
+            f"Application lacks required permission scope "
+            f"'{scope_result.required_scope}'."
+        )
+        decision_source = "scope"
     elif needs_approval:
         provider = approval_provider or TerminalApprovalProvider()
         strong = control.level == HumanControlLevel.STRONG_CONFIRM
