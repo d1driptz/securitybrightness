@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from .api import check_action
 from .authorization import AuthorizationContext
 from .registry import ApplicationRegistry
+from .validation import application_id as validate_application_id
 
 HOST = "127.0.0.1"
 PORT = 8765
@@ -211,11 +212,12 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         if payload is None:
             return
         registry = self.server.application_registry
-        application_id = str(payload.get("application_id", "")).strip()
+        application_id = payload.get("application_id", "")
         if not application_id:
             self._send_json(400, {"error": "application_id_required"})
             return
         try:
+            application_id = validate_application_id(application_id)
             if path == "/rotate":
                 unknown = set(payload) - {"application_id"}
                 if unknown:
@@ -238,13 +240,10 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             if unknown:
                 self._send_json(400, {"error": "unknown_fields", "fields": sorted(unknown)})
                 return
-            if "scopes" in payload:
-                registry.set_scopes(application_id, payload["scopes"])
-            if "trusted" in payload:
-                registry.set_trusted(application_id, payload["trusted"])
-            application = registry.get(application_id)
-            if application is None:
-                raise KeyError("application is not registered")
+            application = registry.update_permissions(
+                application_id,
+                **{key: payload[key] for key in ("scopes", "trusted") if key in payload},
+            )
             self._send_json(200, {
                 "application_id": application.application_id,
                 "scopes": sorted(application.scopes),

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Iterable
+from collections.abc import Mapping
 
 from .events import SecurityEvent
 
@@ -36,13 +37,17 @@ ACTION_SCOPES = {
 def normalize_scopes(scopes: Iterable[str] | None) -> set[str]:
     if scopes is None:
         return set()
-    if isinstance(scopes, (str, bytes)):
-        raise TypeError("scopes must be an iterable of scope strings, not a single string")
-    return {
-        str(scope).strip().lower()
-        for scope in scopes
-        if str(scope).strip()
-    }
+    if isinstance(scopes, (str, bytes, Mapping)):
+        raise TypeError("scopes must be an iterable of strings, not a string or mapping")
+    normalized = set()
+    for scope in scopes:
+        if not isinstance(scope, str):
+            raise TypeError("each scope must be a string")
+        scope = scope.strip().lower()
+        if not scope or any(ord(c) < 32 or ord(c) == 127 for c in scope):
+            raise ValueError("scopes must be nonempty strings without control characters")
+        normalized.add(scope)
+    return normalized
 
 
 def check_scope(event: SecurityEvent) -> ScopeResult:

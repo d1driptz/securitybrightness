@@ -1,79 +1,104 @@
 import hashlib
 import hmac
 import secrets
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from threading import RLock
 
 from .scopes import normalize_scopes
+from .validation import application_id as validate_application_id, boolean
 
 
-@dataclass
+@dataclass(frozen=True)
 class RegisteredApplication:
     application_id: str
     credential_hash: str
-    scopes: set[str] = field(default_factory=set)
+    scopes: frozenset[str] = field(default_factory=frozenset)
     trusted: bool = False
 
 
 class ApplicationRegistry:
     def __init__(self):
         self._applications = {}
+        self._lock = RLock()
 
     @staticmethod
     def _hash_credential(credential: str) -> str:
         return hashlib.sha256(credential.encode("utf-8")).hexdigest()
 
     def register(self, application_id: str, scopes=None, trusted=False):
-        application_id = str(application_id).strip()
-        if not application_id:
-            raise ValueError("application_id is required")
-        if application_id in self._applications:
-            raise ValueError("application is already registered")
+        with self._lock:
+            application_id = validate_application_id(application_id)
+            if application_id in self._applications:
+                raise ValueError("application is already registered")
 
-        credential = secrets.token_urlsafe(32)
-        self._applications[application_id] = RegisteredApplication(
-            application_id=application_id,
-            credential_hash=self._hash_credential(credential),
-            scopes=normalize_scopes(scopes),
-            trusted=bool(trusted),
-        )
-        return credential
+            credential = secrets.token_urlsafe(32)
+            self._applications[application_id] = RegisteredApplication(
+                application_id=application_id,
+                credential_hash=self._hash_credential(credential),
+                scopes=frozenset(normalize_scopes(scopes)),
+                trusted=boolean(trusted, "trusted"),
+            )
+            return credential
 
     def get(self, application_id: str):
-        return self._applications.get(str(application_id).strip())
+        with self._lock:
+            return self._applications.get(validate_application_id(application_id))
+
+    def update_permissions(self, application_id: str, **changes):
+        """Validate all fields before replacing one immutable registry snapshot."""
+        with self._lock:
+            application_id = validate_application_id(application_id)
+            if set(changes) - {"scopes", "trusted"}:
+                raise TypeError("unknown permission fields")
+            if "scopes" in changes:
+                changes["scopes"] = frozenset(normalize_scopes(changes["scopes"]))
+            if "trusted" in changes:
+                changes["trusted"] = boolean(changes["trusted"], "trusted")
+            application = self.get(application_id)
+            if application is None:
+                raise KeyError("application is not registered")
+            updated = replace(application, **changes)
+            self._applications[application_id] = updated
+            return updated
 
     def set_scopes(self, application_id: str, scopes):
-        application = self.get(application_id)
-        if application is None:
-            raise KeyError("application is not registered")
-        application.scopes = normalize_scopes(scopes)
-        return set(application.scopes)
+        with self._lock:
+            return set(self.update_permissions(application_id, scopes=scopes).scopes)
 
     def set_trusted(self, application_id: str, trusted: bool):
-        application = self.get(application_id)
-        if application is None:
-            raise KeyError("application is not registered")
-        application.trusted = bool(trusted)
-        return application.trusted
+        with self._lock:
+            return self.update_permissions(application_id, trusted=trusted).trusted
 
     def revoke(self, application_id: str) -> bool:
-        application_id = str(application_id).strip()
-        return self._applications.pop(application_id, None) is not None
+        with self._lock:
+            application_id = validate_application_id(application_id)
+            return self._applications.pop(application_id, None) is not None
 
     def rotate_credential(self, application_id: str):
-        application = self.get(application_id)
-        if application is None:
-            raise KeyError("application is not registered")
+        with self._lock:
+            application = self.get(application_id)
+            if application is None:
+                raise KeyError("application is not registered")
 
-        credential = secrets.token_urlsafe(32)
-        application.credential_hash = self._hash_credential(credential)
-        return credential
+            credential = secrets.token_urlsafe(32)
+            self._applications[application.application_id] = replace(
+                application, credential_hash=self._hash_credential(credential),
+            )
+            return credential
 
     def authenticate(self, application_id: str, credential: str):
-        application = self.get(application_id)
-        if application is None or not isinstance(credential, str) or not credential:
-            return None
+        with self._lock:
+            try:
+                application = self.get(application_id)
+            except (TypeError, ValueError):
+                return None
+            if application is None or not isinstance(credential, str) or not credential:
+                return None
 
-        supplied_hash = self._hash_credential(credential)
-        if not hmac.compare_digest(supplied_hash, application.credential_hash):
-            return None
-        return application
+            try:
+                supplied_hash = self._hash_credential(credential)
+            except UnicodeEncodeError:
+                return None
+            if not hmac.compare_digest(supplied_hash, application.credential_hash):
+                return None
+            return application
