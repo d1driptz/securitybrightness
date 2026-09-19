@@ -10,40 +10,27 @@ class PermissionResult:
     decision: Decision
     reason: str
     decision_source: str
+    policy_rule: str
 
 
-def request_permission(
-    event: SecurityEvent,
-    approval_provider=None,
-) -> PermissionResult:
-    """
-    Ask SecurityBrightness whether an action should be allowed.
-    """
+def request_permission(event: SecurityEvent, approval_provider=None) -> PermissionResult:
+    policy_result = evaluate(event)
+    decision = policy_result.decision
 
-    decision = evaluate(event)
-
-    if decision == Decision.ALLOW:
-        reason = "Action is permitted by the current security policy."
+    if decision in (Decision.ALLOW, Decision.DENY):
+        reason = policy_result.reason
         decision_source = "policy"
-
-    elif decision == Decision.DENY:
-        reason = "Action is blocked by the current security policy."
-        decision_source = "policy"
-
     else:
         provider = approval_provider or TerminalApprovalProvider()
         approved = provider.request_approval(event)
         decision_source = "user"
-
-        if approved:
-            decision = Decision.ALLOW
-            reason = "Action was approved by the user."
-        else:
-            decision = Decision.DENY
-            reason = "Action was denied by the user."
+        decision = Decision.ALLOW if approved else Decision.DENY
+        outcome = "approved" if approved else "denied"
+        reason = f"User {outcome} the action after policy review."
 
     return PermissionResult(
         decision=decision,
         reason=reason,
         decision_source=decision_source,
+        policy_rule=policy_result.rule,
     )
