@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from .approval import TerminalApprovalProvider
 from .events import SecurityEvent
 from .policy import Decision, evaluate
 
@@ -10,7 +11,10 @@ class PermissionResult:
     reason: str
 
 
-def request_permission(event: SecurityEvent) -> PermissionResult:
+def request_permission(
+    event: SecurityEvent,
+    approval_provider=None,
+) -> PermissionResult:
     """
     Ask SecurityBrightness whether an action should be allowed.
     """
@@ -24,12 +28,10 @@ def request_permission(event: SecurityEvent) -> PermissionResult:
         reason = "Action is blocked by the current security policy."
 
     else:
-        answer = input(
-            f"SecurityBrightness requires approval for '{event.action}'. "
-            "Allow this action? (yes/no): "
-        ).strip().lower()
+        provider = approval_provider or TerminalApprovalProvider()
+        approved = provider.request_approval(event)
 
-        if answer in ("yes", "y"):
+        if approved:
             decision = Decision.ALLOW
             reason = "Action was approved by the user."
         else:
