@@ -3,13 +3,7 @@ from .permissions import request_permission
 from .logger import log_event
 
 
-def process_event(event: SecurityEvent):
-    """
-    Process a security event through the SecurityBrightness pipeline.
-    """
-
-    result = request_permission(event)
-
+def process_event(event: SecurityEvent, approval_provider=None):
+    result = request_permission(event, approval_provider)
     log_event(event, result)
-
     return result
