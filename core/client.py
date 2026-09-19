@@ -8,7 +8,7 @@ class SecurityBrightnessClientError(RuntimeError):
     pass
 
 
-def check(action, target, token, source="local_client", event_type="application_action", details=None, host=HOST, port=PORT, timeout=5):
+def check(action, target, token, source="local_client", event_type="application_action", details=None, host=HOST, port=PORT, timeout=5, application_id=None):
     if not token:
         raise ValueError("token is required")
 
@@ -20,14 +20,18 @@ def check(action, target, token, source="local_client", event_type="application_
         "details": details or {},
     }
     body = json.dumps(payload).encode("utf-8")
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    if application_id:
+        headers["X-SecurityBrightness-App"] = application_id
+
     req = request.Request(
         f"http://{host}:{port}/check",
         data=body,
         method="POST",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        },
+        headers=headers,
     )
 
     try:
