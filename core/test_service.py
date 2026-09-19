@@ -182,6 +182,56 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(check_action.call_args.kwargs["source"], "app-1")
 
+    def test_admin_can_register_application_and_use_issued_credential(self):
+        status, registration = self.request(
+            "POST",
+            "/register",
+            {"application_id": "new-app", "scopes": ["files.read"]},
+        )
+        self.assertEqual(status, 201)
+        self.assertEqual(registration["application_id"], "new-app")
+
+        status, result = self.request(
+            "POST",
+            "/check",
+            {"action": "read", "target": "example.txt"},
+            token=registration["credential"],
+            application_id="new-app",
+        )
+        self.assertEqual(status, 200)
+        self.assertTrue(result["authenticated"])
+        self.assertTrue(result["scope_granted"])
+
+    def test_registration_requires_admin_token(self):
+        status, payload = self.request(
+            "POST",
+            "/register",
+            {"application_id": "new-app"},
+            token=None,
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "unauthorized")
+
+    def test_application_credential_cannot_register_another_application(self):
+        registry = ApplicationRegistry()
+        credential = registry.register("app-1", scopes=["files.read"])
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+        self.server = create_server("127.0.0.1", 0, token=TOKEN, registry=registry)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.port = self.server.server_address[1]
+
+        status, payload = self.request(
+            "POST",
+            "/register",
+            {"application_id": "app-2"},
+            token=credential,
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "unauthorized")
+
 
 if __name__ == "__main__":
     unittest.main()
