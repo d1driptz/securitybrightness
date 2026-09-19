@@ -9,6 +9,7 @@ from .policy import Decision, evaluate
 class PermissionResult:
     decision: Decision
     reason: str
+    decision_source: str
 
 
 def request_permission(
@@ -23,13 +24,16 @@ def request_permission(
 
     if decision == Decision.ALLOW:
         reason = "Action is permitted by the current security policy."
+        decision_source = "policy"
 
     elif decision == Decision.DENY:
         reason = "Action is blocked by the current security policy."
+        decision_source = "policy"
 
     else:
         provider = approval_provider or TerminalApprovalProvider()
         approved = provider.request_approval(event)
+        decision_source = "user"
 
         if approved:
             decision = Decision.ALLOW
@@ -41,4 +45,5 @@ def request_permission(
     return PermissionResult(
         decision=decision,
         reason=reason,
+        decision_source=decision_source,
     )
