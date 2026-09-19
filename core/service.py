@@ -5,6 +5,7 @@ import secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from .api import check_action
+from .registry import ApplicationRegistry
 
 HOST = "127.0.0.1"
 PORT = 8765
@@ -25,13 +26,24 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _authorized(self):
-        expected = getattr(self.server, "securitybrightness_token", "")
+    def _bearer_token(self):
         supplied = self.headers.get("Authorization", "")
         prefix = "Bearer "
         if not supplied.startswith(prefix):
-            return False
-        return hmac.compare_digest(supplied[len(prefix):], expected)
+            return ""
+        return supplied[len(prefix):]
+
+    def _application(self):
+        application_id = self.headers.get("X-SecurityBrightness-App", "").strip()
+        credential = self._bearer_token()
+        registry = getattr(self.server, "application_registry", None)
+        if application_id and registry is not None:
+            return registry.authenticate(application_id, credential)
+        return None
+
+    def _authorized(self):
+        expected = getattr(self.server, "securitybrightness_token", "")
+        return hmac.compare_digest(self._bearer_token(), expected)
 
     def do_GET(self):
         if self.path == "/health":
@@ -44,7 +56,8 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not_found"})
             return
 
-        if not self._authorized():
+        application = self._application()
+        if application is None and not self._authorized():
             self._send_json(401, {"error": "unauthorized"})
             return
 
@@ -82,13 +95,27 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "action_and_target_required"})
             return
 
+        details = dict(payload.get("details") or {})
+        reserved = {"application_id", "authenticated", "trust", "granted_scopes"}
+        if reserved.intersection(details):
+            self._send_json(400, {"error": "reserved_identity_fields"})
+            return
+
+        if application is not None:
+            details.update({
+                "application_id": application.application_id,
+                "authenticated": True,
+                "trust": "trusted" if application.trusted else "recognized",
+                "granted_scopes": sorted(application.scopes),
+            })
+
         try:
             result = check_action(
                 action=payload["action"],
                 target=payload["target"],
                 source=payload.get("source", "local_client"),
                 event_type=payload.get("event_type", "application_action"),
-                details=payload.get("details"),
+                details=details,
             )
         except (TypeError, ValueError) as exc:
             self._send_json(400, {"error": "invalid_request", "message": str(exc)})
@@ -100,11 +127,12 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         return
 
 
-def create_server(host=HOST, port=PORT, token=None):
+def create_server(host=HOST, port=PORT, token=None, registry=None):
     if host not in {"127.0.0.1", "localhost", "::1"}:
         raise ValueError("SecurityBrightness service must bind to a loopback address")
     server = HTTPServer((host, port), SecurityBrightnessHandler)
     server.securitybrightness_token = token or os.environ.get(TOKEN_ENV) or secrets.token_urlsafe(32)
+    server.application_registry = registry or ApplicationRegistry()
     return server
 
 
