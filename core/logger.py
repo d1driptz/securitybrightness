@@ -14,6 +14,7 @@ def log_event(event, result):
         "details": event.details,
         "decision": result.decision.value,
         "decision_source": result.decision_source,
+        "policy_rule": result.policy_rule,
         "reason": result.reason,
     }
 
@@ -27,6 +28,4 @@ def log_event(event, result):
 
     existing_events.append(record)
 
-    LOG_FILE.write_text(
-        json.dumps(existing_events, indent=2)
-    )
+    LOG_FILE.write_text(json.dumps(existing_events, indent=2))
