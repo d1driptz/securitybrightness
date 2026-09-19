@@ -2,22 +2,17 @@ import http.client
 import json
 import threading
 import unittest
-from http.server import ThreadingHTTPServer
 from unittest.mock import patch
 
-from core.service import SecurityBrightnessHandler
+from core.service import create_server
+
+TOKEN = "test-token"
 
 
 class ServiceTests(unittest.TestCase):
     def setUp(self):
-        self.server = ThreadingHTTPServer(
-            ("127.0.0.1", 0),
-            SecurityBrightnessHandler,
-        )
-        self.thread = threading.Thread(
-            target=self.server.serve_forever,
-            daemon=True,
-        )
+        self.server = create_server("127.0.0.1", 0, token=TOKEN)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.port = self.server.server_address[1]
 
@@ -26,13 +21,15 @@ class ServiceTests(unittest.TestCase):
         self.server.server_close()
         self.thread.join(timeout=2)
 
-    def request(self, method, path, body=None):
+    def request(self, method, path, body=None, token=TOKEN, content_type="application/json"):
         connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=2)
         headers = {}
         encoded = None
+        if token is not None:
+            headers["Authorization"] = f"Bearer {token}"
         if body is not None:
             encoded = json.dumps(body).encode("utf-8")
-            headers["Content-Type"] = "application/json"
+            headers["Content-Type"] = content_type
         connection.request(method, path, body=encoded, headers=headers)
         response = connection.getresponse()
         payload = json.loads(response.read().decode("utf-8"))
@@ -41,7 +38,7 @@ class ServiceTests(unittest.TestCase):
         return status, payload
 
     def test_health_endpoint(self):
-        status, payload = self.request("GET", "/health")
+        status, payload = self.request("GET", "/health", token=None)
         self.assertEqual(status, 200)
         self.assertEqual(payload["status"], "ok")
 
@@ -53,15 +50,27 @@ class ServiceTests(unittest.TestCase):
             "decision": "allow",
             "decision_source": "policy",
             "policy_rule": "safe_read",
+            "human_control": "automatic",
             "reason": "Allowed.",
         }
-        status, payload = self.request(
-            "POST",
-            "/check",
-            {"action": "read", "target": "example.txt"},
-        )
+        status, payload = self.request("POST", "/check", {"action": "read", "target": "example.txt"})
         self.assertEqual(status, 200)
         self.assertEqual(payload["decision"], "allow")
+
+    def test_missing_token_is_rejected(self):
+        status, payload = self.request("POST", "/check", {"action": "read", "target": "x"}, token=None)
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "unauthorized")
+
+    def test_wrong_token_is_rejected(self):
+        status, payload = self.request("POST", "/check", {"action": "read", "target": "x"}, token="wrong")
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "unauthorized")
+
+    def test_wrong_content_type_is_rejected(self):
+        status, payload = self.request("POST", "/check", {"action": "read", "target": "x"}, content_type="text/plain")
+        self.assertEqual(status, 415)
+        self.assertEqual(payload["error"], "content_type_must_be_application_json")
 
     def test_missing_fields_are_rejected(self):
         status, payload = self.request("POST", "/check", {"action": "read"})
@@ -69,11 +78,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(payload["error"], "action_and_target_required")
 
     def test_unknown_fields_are_rejected(self):
-        status, payload = self.request(
-            "POST",
-            "/check",
-            {"action": "read", "target": "x", "unexpected": True},
-        )
+        status, payload = self.request("POST", "/check", {"action": "read", "target": "x", "unexpected": True})
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"], "unknown_fields")
 
@@ -81,6 +86,10 @@ class ServiceTests(unittest.TestCase):
         status, payload = self.request("GET", "/missing")
         self.assertEqual(status, 404)
         self.assertEqual(payload["error"], "not_found")
+
+    def test_remote_binding_is_rejected(self):
+        with self.assertRaises(ValueError):
+            create_server("0.0.0.0", 0, token=TOKEN)
 
 
 if __name__ == "__main__":
