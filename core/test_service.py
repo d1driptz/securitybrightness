@@ -181,6 +181,9 @@ class ServiceTests(unittest.TestCase):
             )
             self.assertEqual(status, 200)
             self.assertEqual(check_action.call_args.kwargs["source"], "app-1")
+            context = check_action.call_args.kwargs["authorization_context"]
+            self.assertEqual(context.application_id, "app-1")
+            self.assertTrue(context.authenticated)
 
     def test_admin_can_register_application_and_use_issued_credential(self):
         status, registration = self.request(
