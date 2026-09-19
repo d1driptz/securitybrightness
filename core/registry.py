@@ -3,6 +3,8 @@ import hmac
 import secrets
 from dataclasses import dataclass, field
 
+from .scopes import normalize_scopes
+
 
 @dataclass
 class RegisteredApplication:
@@ -31,18 +33,34 @@ class ApplicationRegistry:
         self._applications[application_id] = RegisteredApplication(
             application_id=application_id,
             credential_hash=self._hash_credential(credential),
-            scopes={str(scope).strip().lower() for scope in (scopes or []) if str(scope).strip()},
+            scopes=normalize_scopes(scopes),
             trusted=bool(trusted),
         )
         return credential
+
+    def get(self, application_id: str):
+        return self._applications.get(str(application_id).strip())
+
+    def set_scopes(self, application_id: str, scopes):
+        application = self.get(application_id)
+        if application is None:
+            raise KeyError("application is not registered")
+        application.scopes = normalize_scopes(scopes)
+        return set(application.scopes)
+
+    def set_trusted(self, application_id: str, trusted: bool):
+        application = self.get(application_id)
+        if application is None:
+            raise KeyError("application is not registered")
+        application.trusted = bool(trusted)
+        return application.trusted
 
     def revoke(self, application_id: str) -> bool:
         application_id = str(application_id).strip()
         return self._applications.pop(application_id, None) is not None
 
     def rotate_credential(self, application_id: str):
-        application_id = str(application_id).strip()
-        application = self._applications.get(application_id)
+        application = self.get(application_id)
         if application is None:
             raise KeyError("application is not registered")
 
@@ -51,8 +69,8 @@ class ApplicationRegistry:
         return credential
 
     def authenticate(self, application_id: str, credential: str):
-        application = self._applications.get(str(application_id).strip())
-        if application is None or not isinstance(credential, str):
+        application = self.get(application_id)
+        if application is None or not isinstance(credential, str) or not credential:
             return None
 
         supplied_hash = self._hash_credential(credential)
