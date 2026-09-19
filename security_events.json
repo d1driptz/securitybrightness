@@ -16,5 +16,34 @@
     "target": "system_resource",
     "details": {},
     "decision": "ask"
+  },
+  {
+    "timestamp": "2026-09-19T10:02:34.807406Z",
+    "event_type": "file_access",
+    "source": "demo_application",
+    "action": "read",
+    "target": "example.txt",
+    "details": {
+      "purpose": "testing SecurityBrightness"
+    },
+    "decision": "allow"
+  },
+  {
+    "timestamp": "2026-09-19T10:05:33.129434Z",
+    "event_type": "file_access",
+    "source": "demo_app",
+    "action": "read",
+    "target": "example.txt",
+    "details": {},
+    "decision": "allow"
+  },
+  {
+    "timestamp": "2026-09-19T10:05:33.140607Z",
+    "event_type": "system_action",
+    "source": "demo_app",
+    "action": "unknown_action",
+    "target": "system_resource",
+    "details": {},
+    "decision": "ask"
   }
 ]
