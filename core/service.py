@@ -43,7 +43,10 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
 
     def _authorized(self):
         expected = getattr(self.server, "securitybrightness_token", "")
-        return hmac.compare_digest(self._bearer_token(), expected)
+        supplied = self._bearer_token()
+        if not isinstance(expected, str) or not isinstance(supplied, str):
+            return False
+        return hmac.compare_digest(supplied, expected)
 
     def do_GET(self):
         if self.path == "/health":
