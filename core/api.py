@@ -19,4 +19,12 @@ def check_action(
         target=target,
         details=details,
     )
-    return process_event(event, approval_provider)
+    result = process_event(event, approval_provider)
+    return {
+        "request_id": event.request_id,
+        "timestamp": event.timestamp,
+        "decision": result.decision.value,
+        "decision_source": result.decision_source,
+        "policy_rule": result.policy_rule,
+        "reason": result.reason,
+    }
