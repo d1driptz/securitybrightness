@@ -25,8 +25,13 @@ class HumanControlTests(unittest.TestCase):
         result = classify(event, evaluate(event))
         self.assertEqual(result.level, HumanControlLevel.NOTIFY)
 
-    def test_unknown_application_safe_read_requires_approval(self):
+    def test_legacy_safe_read_without_identity_remains_automatic(self):
         event = self.event()
+        result = classify(event, evaluate(event))
+        self.assertEqual(result.level, HumanControlLevel.AUTOMATIC)
+
+    def test_identified_unauthenticated_application_requires_approval(self):
+        event = self.event(details={"application_id": "unknown-app"})
         result = classify(event, evaluate(event))
         self.assertEqual(result.level, HumanControlLevel.APPROVAL)
 
