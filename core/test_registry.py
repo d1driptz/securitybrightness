@@ -32,6 +32,24 @@ class RegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             registry.register("  ")
 
+    def test_rotating_credential_invalidates_old_credential(self):
+        registry = ApplicationRegistry()
+        old_credential = registry.register("app-1")
+        new_credential = registry.rotate_credential("app-1")
+        self.assertIsNone(registry.authenticate("app-1", old_credential))
+        self.assertIsNotNone(registry.authenticate("app-1", new_credential))
+
+    def test_revoked_application_can_no_longer_authenticate(self):
+        registry = ApplicationRegistry()
+        credential = registry.register("app-1")
+        self.assertTrue(registry.revoke("app-1"))
+        self.assertIsNone(registry.authenticate("app-1", credential))
+
+    def test_rotating_unknown_application_is_rejected(self):
+        registry = ApplicationRegistry()
+        with self.assertRaises(KeyError):
+            registry.rotate_credential("missing")
+
 
 if __name__ == "__main__":
     unittest.main()
