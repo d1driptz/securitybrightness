@@ -5,6 +5,7 @@ import secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from .api import check_action
+from .authorization import AuthorizationContext
 from .registry import ApplicationRegistry
 
 HOST = "127.0.0.1"
@@ -122,13 +123,13 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "reserved_identity_fields"})
             return
 
+        authorization_context = None
         if application is not None:
-            details.update({
-                "application_id": application.application_id,
-                "authenticated": True,
-                "trust": "trusted" if application.trusted else "recognized",
-                "granted_scopes": sorted(application.scopes),
-            })
+            authorization_context = AuthorizationContext.authenticated_application(
+                application.application_id,
+                scopes=application.scopes,
+                trusted=application.trusted,
+            )
 
         try:
             result = check_action(
@@ -137,6 +138,7 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
                 source=application.application_id if application is not None else payload.get("source", "local_client"),
                 event_type=payload.get("event_type", "application_action"),
                 details=details,
+                authorization_context=authorization_context,
             )
         except (TypeError, ValueError) as exc:
             self._send_json(400, {"error": "invalid_request", "message": str(exc)})
