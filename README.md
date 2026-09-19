@@ -9,11 +9,11 @@ SecurityBrightness is a conservative permission and audit layer for application 
 3. The policy engine returns `allow`, `deny`, or `ask`.
 4. `ask` decisions require an approval provider.
 5. The final decision is written to the audit log with its policy rule, source, reason, and request ID.
-6. The application API returns a structured response.
+6. The application receives a structured response.
 
-SecurityBrightness currently makes decisions only. It does **not** execute requested file or system operations.
+SecurityBrightness makes decisions only. It does **not** execute requested file or system operations.
 
-## Example
+## Python API
 
 ```python
 from core.api import check_action
@@ -22,14 +22,34 @@ result = check_action("read", "example.txt")
 print(result)
 ```
 
-A response contains:
+Responses contain `request_id`, `timestamp`, `decision`, `decision_source`, `policy_rule`, and `reason`.
 
-- `request_id`
-- `timestamp`
-- `decision`
-- `decision_source`
-- `policy_rule`
-- `reason`
+## Local service
+
+Run from the repository root:
+
+```bash
+python -m core.service
+```
+
+The service binds to `127.0.0.1:8765` only, so it is not exposed to other machines by default.
+
+Health check:
+
+```text
+GET /health
+```
+
+Decision request:
+
+```text
+POST /check
+Content-Type: application/json
+
+{"action":"read","target":"example.txt","source":"my_app"}
+```
+
+Requests are size-limited and unknown fields are rejected. Actions requiring approval use the configured approval provider. The default provider asks in the service terminal.
 
 ## Policy baseline
 
@@ -47,4 +67,4 @@ Run the complete automated suite from the repository root:
 python -m unittest discover -s core -p "test_*.py" -v
 ```
 
-The tests cover policy decisions, permission approval/denial, event validation, application API responses, and audit logging.
+Tests cover policy decisions, approval/denial, event validation, the Python API, local HTTP service, and audit logging.
