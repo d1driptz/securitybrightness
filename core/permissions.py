@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from .approval import TerminalApprovalProvider
 from .events import SecurityEvent
 from .human_control import HumanControlLevel, classify
+from .identity import identify
 from .policy import Decision, evaluate
 from .scopes import check_scope
 
@@ -14,6 +15,11 @@ class PermissionResult:
     decision_source: str
     policy_rule: str
     human_control: str = "automatic"
+    application_id: str = ""
+    application_trust: str = "unknown"
+    authenticated: bool = False
+    required_scope: str = ""
+    scope_granted: bool = False
 
 
 def _ask_provider(provider, event, strong):
@@ -29,6 +35,7 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
     control = classify(event, policy_result)
     decision = policy_result.decision
     scope_result = check_scope(event)
+    identity = identify(event)
     identity_participates = bool(event.details.get("application_id"))
 
     needs_approval = control.level in {
@@ -65,4 +72,9 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
         decision_source=decision_source,
         policy_rule=policy_result.rule,
         human_control=control.level.value,
+        application_id=identity.application_id,
+        application_trust=identity.trust.value,
+        authenticated=identity.authenticated,
+        required_scope=scope_result.required_scope,
+        scope_granted=scope_result.granted,
     )
