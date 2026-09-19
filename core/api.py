@@ -11,7 +11,11 @@ def check_action(
     event_type: str = "application_action",
     details: Dict[str, Any] | None = None,
     approval_provider=None,
+    authorization_context=None,
 ):
+    if authorization_context is not None:
+        details = authorization_context.apply(details)
+
     event = SecurityEvent.create(
         event_type=event_type,
         source=source,
