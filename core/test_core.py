@@ -1,5 +1,7 @@
 from core.events import SecurityEvent
 from core.security import process_event
+
+
 def run_tests():
     # A normal read should be allowed.
     read_event = SecurityEvent.create(
@@ -29,7 +31,7 @@ def run_tests():
     print("UNKNOWN ACTION TEST")
     print("Decision:", result.decision.value)
     print("Reason:", result.reason)
-
+    print()
 
     # A dangerous action should be denied.
     deny_event = SecurityEvent.create(
@@ -45,9 +47,6 @@ def run_tests():
     print("Decision:", result.decision.value)
     print("Reason:", result.reason)
     print()
-
-if __name__ == "__main__":
-    run_tests()
 
 
 if __name__ == "__main__":
