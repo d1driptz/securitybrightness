@@ -1,7 +1,7 @@
 import unittest
 
 from core.events import SecurityEvent
-from core.scopes import check_scope
+from core.scopes import check_scope, normalize_scopes
 
 
 class ScopeTests(unittest.TestCase):
@@ -35,6 +35,10 @@ class ScopeTests(unittest.TestCase):
         result = check_scope(self.event("custom_action", []))
         self.assertEqual(result.required_scope, "action.custom_action")
         self.assertFalse(result.granted)
+
+    def test_scope_string_is_rejected_instead_of_iterated_as_characters(self):
+        with self.assertRaises(TypeError):
+            normalize_scopes("files.read")
 
 
 if __name__ == "__main__":
