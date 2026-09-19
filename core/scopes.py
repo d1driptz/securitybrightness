@@ -36,6 +36,8 @@ ACTION_SCOPES = {
 def normalize_scopes(scopes: Iterable[str] | None) -> set[str]:
     if scopes is None:
         return set()
+    if isinstance(scopes, (str, bytes)):
+        raise TypeError("scopes must be an iterable of scope strings, not a single string")
     return {
         str(scope).strip().lower()
         for scope in scopes
