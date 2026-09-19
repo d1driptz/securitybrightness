@@ -12,7 +12,7 @@ class PermissionResult:
     reason: str
     decision_source: str
     policy_rule: str
-    human_control: str
+    human_control: str = "automatic"
 
 
 def request_permission(event: SecurityEvent, approval_provider=None) -> PermissionResult:
