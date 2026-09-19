@@ -4,7 +4,7 @@ from pathlib import Path
 LOG_FILE = Path("security_events.json")
 
 
-def log_event(event, decision):
+def log_event(event, decision, decision_source):
     record = {
         "timestamp": event.timestamp,
         "event_type": event.event_type,
@@ -13,6 +13,7 @@ def log_event(event, decision):
         "target": event.target,
         "details": event.details,
         "decision": decision.value,
+        "decision_source": decision_source,
     }
 
     existing_events = []
