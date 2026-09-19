@@ -24,7 +24,17 @@ def request_permission(event: SecurityEvent) -> PermissionResult:
         reason = "Action is blocked by the current security policy."
 
     else:
-        reason = "Action requires further approval or review."
+        answer = input(
+            f"SecurityBrightness requires approval for '{event.action}'. "
+            "Allow this action? (yes/no): "
+        ).strip().lower()
+
+        if answer in ("yes", "y"):
+            decision = Decision.ALLOW
+            reason = "Action was approved by the user."
+        else:
+            decision = Decision.DENY
+            reason = "Action was denied by the user."
 
     return PermissionResult(
         decision=decision,
