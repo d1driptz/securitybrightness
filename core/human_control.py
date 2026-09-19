@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .events import SecurityEvent
+from .identity import TrustLevel, identify
 from .policy import Decision, PolicyResult
 
 
@@ -35,6 +36,7 @@ HIGH_IMPACT_ACTIONS = {
 def classify(event: SecurityEvent, policy_result: PolicyResult) -> HumanControlResult:
     action = (event.action or "").strip().lower()
     impact = str(event.details.get("impact", "")).strip().lower()
+    identity = identify(event)
 
     if policy_result.decision == Decision.DENY:
         return HumanControlResult(
@@ -46,6 +48,12 @@ def classify(event: SecurityEvent, policy_result: PolicyResult) -> HumanControlR
         return HumanControlResult(
             HumanControlLevel.STRONG_CONFIRM,
             "The action can significantly affect the user or another person.",
+        )
+
+    if identity.trust == TrustLevel.UNKNOWN and policy_result.decision == Decision.ALLOW:
+        return HumanControlResult(
+            HumanControlLevel.APPROVAL,
+            "An unknown or unauthenticated application requires human approval.",
         )
 
     if policy_result.decision == Decision.ASK:
