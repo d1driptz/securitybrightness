@@ -21,13 +21,16 @@ class ServiceTests(unittest.TestCase):
         self.server.server_close()
         self.thread.join(timeout=2)
 
-    def request(self, method, path, body=None, token=TOKEN, content_type="application/json"):
+    def request(self, method, path, body=None, token=TOKEN, content_type="application/json", raw_body=None):
         connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=2)
         headers = {}
         encoded = None
         if token is not None:
             headers["Authorization"] = f"Bearer {token}"
-        if body is not None:
+        if raw_body is not None:
+            encoded = raw_body
+            headers["Content-Type"] = content_type
+        elif body is not None:
             encoded = json.dumps(body).encode("utf-8")
             headers["Content-Type"] = content_type
         connection.request(method, path, body=encoded, headers=headers)
@@ -68,7 +71,13 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(payload["error"], "unauthorized")
 
     def test_wrong_content_type_is_rejected(self):
-        status, payload = self.request("POST", "/check", {"action": "read", "target": "x"}, content_type="text/plain")
+        status, payload = self.request(
+            "POST",
+            "/check",
+            token=TOKEN,
+            content_type="text/plain",
+            raw_body=b'{"action":"read","target":"x"}',
+        )
         self.assertEqual(status, 415)
         self.assertEqual(payload["error"], "content_type_must_be_application_json")
 
