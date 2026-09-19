@@ -56,7 +56,11 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not_found"})
             return
 
+        application_id = self.headers.get("X-SecurityBrightness-App", "").strip()
         application = self._application()
+        if application_id and application is None:
+            self._send_json(401, {"error": "invalid_application_credentials"})
+            return
         if application is None and not self._authorized():
             self._send_json(401, {"error": "unauthorized"})
             return
@@ -95,7 +99,11 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "action_and_target_required"})
             return
 
-        details = dict(payload.get("details") or {})
+        raw_details = payload.get("details")
+        if raw_details is not None and not isinstance(raw_details, dict):
+            self._send_json(400, {"error": "details_must_be_object"})
+            return
+        details = dict(raw_details or {})
         reserved = {"application_id", "authenticated", "trust", "granted_scopes"}
         if reserved.intersection(details):
             self._send_json(400, {"error": "reserved_identity_fields"})
@@ -113,7 +121,7 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             result = check_action(
                 action=payload["action"],
                 target=payload["target"],
-                source=payload.get("source", "local_client"),
+                source=application.application_id if application is not None else payload.get("source", "local_client"),
                 event_type=payload.get("event_type", "application_action"),
                 details=details,
             )
