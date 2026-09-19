@@ -139,6 +139,49 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"], "reserved_identity_fields")
 
+    def test_invalid_registered_app_credential_does_not_fall_back_to_session_token(self):
+        status, payload = self.request(
+            "POST",
+            "/check",
+            {"action": "read", "target": "x"},
+            token=TOKEN,
+            application_id="missing-app",
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "invalid_application_credentials")
+
+    def test_non_object_details_are_rejected_cleanly(self):
+        status, payload = self.request(
+            "POST",
+            "/check",
+            {"action": "read", "target": "x", "details": "invalid"},
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"], "details_must_be_object")
+
+    def test_registered_application_cannot_spoof_source(self):
+        registry = ApplicationRegistry()
+        credential = registry.register("app-1", scopes=["files.read"])
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+        self.server = create_server("127.0.0.1", 0, token=TOKEN, registry=registry)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.port = self.server.server_address[1]
+
+        with patch("core.service.check_action") as check_action:
+            check_action.return_value = {"decision": "allow"}
+            status, _ = self.request(
+                "POST",
+                "/check",
+                {"action": "read", "target": "x", "source": "spoofed-source"},
+                token=credential,
+                application_id="app-1",
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(check_action.call_args.kwargs["source"], "app-1")
+
 
 if __name__ == "__main__":
     unittest.main()
