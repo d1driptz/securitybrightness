@@ -15,6 +15,7 @@ def run_tests():
 
     print("READ TEST")
     print("Decision:", result.decision.value)
+    print("Source:", result.decision_source)
     print("Reason:", result.reason)
     print()
 
@@ -30,6 +31,7 @@ def run_tests():
 
     print("UNKNOWN ACTION TEST")
     print("Decision:", result.decision.value)
+    print("Source:", result.decision_source)
     print("Reason:", result.reason)
     print()
 
@@ -45,6 +47,7 @@ def run_tests():
 
     print("DENY TEST")
     print("Decision:", result.decision.value)
+    print("Source:", result.decision_source)
     print("Reason:", result.reason)
     print()
 
