@@ -16,14 +16,19 @@ class HumanControlTests(unittest.TestCase):
         )
 
     def test_safe_read_is_automatic(self):
-        event = self.event()
+        event = self.event(details={"application_id": "test", "authenticated": True})
         result = classify(event, evaluate(event))
         self.assertEqual(result.level, HumanControlLevel.AUTOMATIC)
 
     def test_notify_flag_creates_notification_level(self):
-        event = self.event(details={"notify": True})
+        event = self.event(details={"notify": True, "application_id": "test", "authenticated": True})
         result = classify(event, evaluate(event))
         self.assertEqual(result.level, HumanControlLevel.NOTIFY)
+
+    def test_unknown_application_safe_read_requires_approval(self):
+        event = self.event()
+        result = classify(event, evaluate(event))
+        self.assertEqual(result.level, HumanControlLevel.APPROVAL)
 
     def test_policy_ask_requires_approval(self):
         event = self.event(action="write")
