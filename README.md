@@ -32,7 +32,7 @@ Every event receives a unique request ID and UTC timestamp. Decisions record the
 
 Applications can be registered with `ApplicationRegistry`. Registration issues a random credential and stores only its SHA-256 hash in the current in-memory registry. A registration also owns its granted scopes and trust setting.
 
-Credentials can be rotated and applications can be revoked. Scopes and trust can be changed by the registry. External HTTP callers cannot self-assert protected fields such as `application_id`, `authenticated`, `trust`, or `granted_scopes`.
+Credentials can be rotated and applications can be revoked. Scopes and trust can be changed by the registry. The local service also exposes an admin-token-protected `POST /register` endpoint that issues an application credential once at registration. External HTTP callers cannot self-assert protected fields such as `application_id`, `authenticated`, `trust`, or `granted_scopes`.
 
 The registry is currently **in memory**. Registrations therefore do not survive a service restart. Persistent OS-backed credential storage is future work.
 
@@ -57,7 +57,7 @@ python -m core.service
 
 The service binds to `127.0.0.1:8765` and refuses non-loopback binding. A service session token is generated unless `SECURITYBRIGHTNESS_TOKEN` is set.
 
-`GET /health` provides the minimal health endpoint. `POST /check` is authenticated, size-limited, JSON-only, and rejects unknown fields.
+`GET /health` provides the minimal health endpoint. `POST /check` is authenticated, size-limited, JSON-only, and rejects unknown fields. `POST /register` requires the service session/admin token and creates an in-memory application registration.
 
 Registered applications authenticate with a Bearer credential plus the `X-SecurityBrightness-App` header. Their identity, trust, scopes, and request source are derived by the service rather than accepted from application JSON. Supplying an application ID with an invalid credential fails authentication instead of falling back to the service session token.
 
@@ -81,7 +81,7 @@ Human-control classifications are `automatic`, `notify`, `approval`, `strong_con
 
 ## Security boundaries and current limitations
 
-SecurityBrightness does not yet execute authorized actions. The audit file is useful for traceability but is not tamper-proof. The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers; the HTTP service is the stronger boundary for external applications because it derives registered identity and scopes server-side.
+SecurityBrightness does not yet execute authorized actions. The audit file is useful for traceability but is not tamper-proof. Sensitive detail keys such as credentials, passwords, secrets, tokens, authorization values, and private keys are recursively redacted before audit records are written. The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers; the HTTP service is the stronger boundary for external applications because it derives registered identity and scopes server-side.
 
 ## Tests
 
