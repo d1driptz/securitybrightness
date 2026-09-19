@@ -50,10 +50,14 @@ def classify(event: SecurityEvent, policy_result: PolicyResult) -> HumanControlR
             "The action can significantly affect the user or another person.",
         )
 
-    if identity.trust == TrustLevel.UNKNOWN and policy_result.decision == Decision.ALLOW:
+    if (
+        identity.trust == TrustLevel.UNKNOWN
+        and policy_result.decision == Decision.ALLOW
+        and event.details.get("application_id")
+    ):
         return HumanControlResult(
             HumanControlLevel.APPROVAL,
-            "An unknown or unauthenticated application requires human approval.",
+            "An identified but unauthenticated application requires human approval.",
         )
 
     if policy_result.decision == Decision.ASK:
