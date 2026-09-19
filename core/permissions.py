@@ -15,6 +15,14 @@ class PermissionResult:
     human_control: str = "automatic"
 
 
+def _ask_provider(provider, event, strong):
+    try:
+        return provider.request_approval(event, strong=strong)
+    except TypeError:
+        # Compatibility with simple/custom providers implementing the original interface.
+        return provider.request_approval(event)
+
+
 def request_permission(event: SecurityEvent, approval_provider=None) -> PermissionResult:
     policy_result = evaluate(event)
     control = classify(event, policy_result)
@@ -30,11 +38,13 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
         decision_source = "policy"
     elif needs_approval:
         provider = approval_provider or TerminalApprovalProvider()
-        approved = provider.request_approval(event)
+        strong = control.level == HumanControlLevel.STRONG_CONFIRM
+        approved = _ask_provider(provider, event, strong)
         decision_source = "user"
         decision = Decision.ALLOW if approved else Decision.DENY
         outcome = "approved" if approved else "denied"
-        reason = f"User {outcome} the action after human-control review."
+        review = "strong human confirmation" if strong else "human-control review"
+        reason = f"User {outcome} the action after {review}."
     else:
         reason = policy_result.reason
         decision_source = "policy"
