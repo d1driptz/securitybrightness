@@ -36,6 +36,20 @@ class ApplicationRegistry:
         )
         return credential
 
+    def revoke(self, application_id: str) -> bool:
+        application_id = str(application_id).strip()
+        return self._applications.pop(application_id, None) is not None
+
+    def rotate_credential(self, application_id: str):
+        application_id = str(application_id).strip()
+        application = self._applications.get(application_id)
+        if application is None:
+            raise KeyError("application is not registered")
+
+        credential = secrets.token_urlsafe(32)
+        application.credential_hash = self._hash_credential(credential)
+        return credential
+
     def authenticate(self, application_id: str, credential: str):
         application = self._applications.get(str(application_id).strip())
         if application is None or not isinstance(credential, str):
