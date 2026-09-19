@@ -27,5 +27,10 @@ def check_action(
         "decision_source": result.decision_source,
         "policy_rule": result.policy_rule,
         "human_control": result.human_control,
+        "application_id": result.application_id,
+        "application_trust": result.application_trust,
+        "authenticated": result.authenticated,
+        "required_scope": result.required_scope,
+        "scope_granted": result.scope_granted,
         "reason": result.reason,
     }
