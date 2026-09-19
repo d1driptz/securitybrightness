@@ -4,6 +4,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
+from core.registry import ApplicationRegistry
 from core.service import create_server
 
 TOKEN = "test-token"
@@ -21,12 +22,14 @@ class ServiceTests(unittest.TestCase):
         self.server.server_close()
         self.thread.join(timeout=2)
 
-    def request(self, method, path, body=None, token=TOKEN, content_type="application/json", raw_body=None):
+    def request(self, method, path, body=None, token=TOKEN, content_type="application/json", raw_body=None, application_id=None):
         connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=2)
         headers = {}
         encoded = None
         if token is not None:
             headers["Authorization"] = f"Bearer {token}"
+        if application_id is not None:
+            headers["X-SecurityBrightness-App"] = application_id
         if raw_body is not None:
             encoded = raw_body
             headers["Content-Type"] = content_type
@@ -99,6 +102,42 @@ class ServiceTests(unittest.TestCase):
     def test_remote_binding_is_rejected(self):
         with self.assertRaises(ValueError):
             create_server("0.0.0.0", 0, token=TOKEN)
+
+    def test_registered_application_identity_is_server_derived(self):
+        registry = ApplicationRegistry()
+        credential = registry.register("app-1", scopes=["files.read"])
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+        self.server = create_server("127.0.0.1", 0, token=TOKEN, registry=registry)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.port = self.server.server_address[1]
+
+        status, payload = self.request(
+            "POST",
+            "/check",
+            {"action": "read", "target": "example.txt"},
+            token=credential,
+            application_id="app-1",
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["application_id"], "app-1")
+        self.assertTrue(payload["authenticated"])
+        self.assertTrue(payload["scope_granted"])
+
+    def test_client_cannot_spoof_identity_fields(self):
+        status, payload = self.request(
+            "POST",
+            "/check",
+            {
+                "action": "read",
+                "target": "example.txt",
+                "details": {"authenticated": True, "application_id": "attacker"},
+            },
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"], "reserved_identity_fields")
 
 
 if __name__ == "__main__":
