@@ -42,6 +42,23 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             check_action("read", "example.txt", details="not-a-dict")
 
+    @patch("core.security.log_event")
+    def test_identified_application_response_contains_authorization_context(self, _log_event):
+        result = check_action(
+            "read",
+            "example.txt",
+            details={
+                "application_id": "app-1",
+                "authenticated": True,
+                "granted_scopes": ["files.read"],
+            },
+        )
+        self.assertEqual(result["application_id"], "app-1")
+        self.assertEqual(result["application_trust"], "recognized")
+        self.assertTrue(result["authenticated"])
+        self.assertEqual(result["required_scope"], "files.read")
+        self.assertTrue(result["scope_granted"])
+
 
 if __name__ == "__main__":
     unittest.main()
