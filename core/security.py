@@ -10,6 +10,6 @@ def process_event(event: SecurityEvent):
 
     result = request_permission(event)
 
-    log_event(event, result.decision)
+    log_event(event, result.decision, result.decision_source)
 
     return result
