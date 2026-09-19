@@ -22,7 +22,7 @@ result = check_action("read", "example.txt")
 print(result)
 ```
 
-Responses contain `request_id`, `timestamp`, `decision`, `decision_source`, `policy_rule`, and `reason`.
+Responses contain `request_id`, `timestamp`, `decision`, `decision_source`, `policy_rule`, `human_control`, and `reason`.
 
 ## Local service
 
@@ -32,7 +32,7 @@ Run from the repository root:
 python -m core.service
 ```
 
-The service binds to `127.0.0.1:8765` only, so it is not exposed to other machines by default.
+The service binds to `127.0.0.1:8765` only and refuses non-loopback binding. On startup it creates a session token unless `SECURITYBRIGHTNESS_TOKEN` is already set. Keep that token private; `/check` requires it as a Bearer token.
 
 Health check:
 
@@ -44,12 +44,15 @@ Decision request:
 
 ```text
 POST /check
+Authorization: Bearer <session-token>
 Content-Type: application/json
 
 {"action":"read","target":"example.txt","source":"my_app"}
 ```
 
-Requests are size-limited and unknown fields are rejected. Actions requiring approval use the configured approval provider. The default provider asks in the service terminal.
+Requests are authenticated, size-limited, JSON-only, and reject unknown fields. Actions requiring approval use the configured approval provider. The default provider asks in the service terminal. The server processes requests serially so terminal approval prompts cannot overlap.
+
+A standard-library client is available in `core.client`; pass it the session token printed by the service.
 
 ## Policy baseline
 
@@ -68,3 +71,8 @@ python -m unittest discover -s core -p "test_*.py" -v
 ```
 
 Tests cover policy decisions, approval/denial, event validation, the Python API, local HTTP service, and audit logging.
+
+
+## Human control
+
+SecurityBrightness separates an application's proposed intent from the human's authority to approve it. Human-control classifications are `automatic`, `notify`, `approval`, `strong_confirm`, and `blocked`. High-impact actions such as sending messages, publishing, sharing, purchases, payments, money transfers, and account changes require stronger human confirmation. The requesting application cannot approve its own request.
