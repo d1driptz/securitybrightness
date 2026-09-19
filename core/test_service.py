@@ -232,6 +232,58 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(status, 401)
         self.assertEqual(payload["error"], "unauthorized")
 
+    def test_admin_can_rotate_application_credential(self):
+        _, registration = self.request("POST", "/register", {"application_id": "app-1", "scopes": ["files.read"]})
+        old_credential = registration["credential"]
+        status, rotation = self.request("POST", "/rotate", {"application_id": "app-1"})
+        self.assertEqual(status, 200)
+        self.assertNotEqual(rotation["credential"], old_credential)
+
+        status, _ = self.request("POST", "/check", {"action": "read", "target": "x"}, token=old_credential, application_id="app-1")
+        self.assertEqual(status, 401)
+
+    def test_admin_can_revoke_application(self):
+        _, registration = self.request("POST", "/register", {"application_id": "app-1", "scopes": ["files.read"]})
+        status, payload = self.request("POST", "/revoke", {"application_id": "app-1"})
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["revoked"])
+
+        status, _ = self.request("POST", "/check", {"action": "read", "target": "x"}, token=registration["credential"], application_id="app-1")
+        self.assertEqual(status, 401)
+
+    def test_admin_can_update_application_permissions(self):
+        _, registration = self.request("POST", "/register", {"application_id": "app-1", "scopes": ["files.read"]})
+        status, payload = self.request(
+            "POST",
+            "/permissions",
+            {"application_id": "app-1", "scopes": ["files.write"], "trusted": True},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["scopes"], ["files.write"])
+        self.assertTrue(payload["trusted"])
+
+        status, result = self.request(
+            "POST",
+            "/check",
+            {"action": "read", "target": "x"},
+            token=registration["credential"],
+            application_id="app-1",
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(result["decision_source"], "scope")
+        self.assertEqual(result["decision"], "deny")
+
+    def test_application_credential_cannot_use_admin_lifecycle_endpoints(self):
+        _, registration = self.request("POST", "/register", {"application_id": "app-1"})
+        status, payload = self.request(
+            "POST",
+            "/revoke",
+            {"application_id": "app-1"},
+            token=registration["credential"],
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "unauthorized")
+
 
 if __name__ == "__main__":
     unittest.main()
