@@ -81,7 +81,7 @@ Human-control classifications are `automatic`, `notify`, `approval`, `strong_con
 
 ## Security boundaries and current limitations
 
-SecurityBrightness does not yet execute authorized actions. The audit file is useful for traceability but is not tamper-proof. Sensitive detail keys such as credentials, passwords, secrets, tokens, authorization values, and private keys are recursively redacted before audit records are written. The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers; the HTTP service is the stronger boundary for external applications because it derives registered identity and scopes server-side.
+SecurityBrightness does not yet execute authorized actions. The audit file is useful for traceability but is not tamper-proof. Sensitive detail keys such as credentials, passwords, secrets, tokens, authorization values, and private keys are recursively redacted before audit records are written. The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers. Authenticated identity and scopes can now be passed separately through an internal `AuthorizationContext`, rather than requiring transport authentication data to be authored directly in caller event details. The HTTP service constructs this context from the registry after credential verification.
 
 ## Tests
 
