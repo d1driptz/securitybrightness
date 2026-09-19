@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 
 from .events import SecurityEvent
@@ -9,35 +10,91 @@ class Decision(Enum):
     ASK = "ask"
 
 
-def evaluate(event: SecurityEvent) -> Decision:
-    """
-    Evaluate a security event against the current baseline policy.
-    """
+@dataclass
+class PolicyResult:
+    decision: Decision
+    reason: str
+    rule: str
 
-    # For now, unknown actions require approval.
-    if not event.action:
-        return Decision.ASK
 
-    # Safe baseline examples.
-    safe_actions = {
-        "read",
-        "open",
-        "view",
-    }
+SAFE_ACTIONS = {"read", "open", "view"}
+DENIED_ACTIONS = {
+    "delete_system_file",
+    "disable_security",
+    "bypass_permission",
+}
+SENSITIVE_MARKERS = {
+    "password",
+    "passwd",
+    "credential",
+    "credentials",
+    "secret",
+    "secrets",
+    "token",
+    "private_key",
+    ".ssh",
+    ".env",
+}
+DESTRUCTIVE_ACTIONS = {
+    "delete",
+    "remove",
+    "overwrite",
+    "modify",
+    "write",
+    "execute",
+    "run",
+}
 
-    if event.action.lower() in safe_actions:
-        return Decision.ALLOW
 
-    # Actions that are blocked by the baseline policy.
-    denied_actions = {
-        "delete_system_file",
-        "disable_security",
-        "bypass_permission",
-    }
+def evaluate(event: SecurityEvent) -> PolicyResult:
+    """Evaluate an event using conservative, context-aware rules."""
 
-    if event.action.lower() in denied_actions:
-        return Decision.DENY
+    action = (event.action or "").strip().lower()
+    target = (event.target or "").strip().lower()
+    sensitivity = str(event.details.get("sensitivity", "")).strip().lower()
 
-    # Everything else requires a decision rather than
-    # allowing the AI or application to decide by itself.
-    return Decision.ASK
+    if not action:
+        return PolicyResult(
+            Decision.ASK,
+            "The action is missing, so explicit approval is required.",
+            "missing_action",
+        )
+
+    if action in DENIED_ACTIONS:
+        return PolicyResult(
+            Decision.DENY,
+            "The requested action is explicitly blocked by security policy.",
+            "blocked_action",
+        )
+
+    sensitive_target = (
+        sensitivity in {"sensitive", "secret", "private", "credential"}
+        or any(marker in target for marker in SENSITIVE_MARKERS)
+    )
+
+    if sensitive_target:
+        return PolicyResult(
+            Decision.ASK,
+            "The target appears sensitive and requires explicit user approval.",
+            "sensitive_target",
+        )
+
+    if action in DESTRUCTIVE_ACTIONS:
+        return PolicyResult(
+            Decision.ASK,
+            "The action can change or execute resources and requires approval.",
+            "change_or_execute",
+        )
+
+    if action in SAFE_ACTIONS:
+        return PolicyResult(
+            Decision.ALLOW,
+            "The action is read-only and the target is not marked sensitive.",
+            "safe_read",
+        )
+
+    return PolicyResult(
+        Decision.ASK,
+        "No policy rule safely allows this action automatically.",
+        "unknown_action",
+    )
