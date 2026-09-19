@@ -15,6 +15,11 @@ class FakeApprovalProvider:
         return self.approved
 
 
+class BrokenApprovalProvider:
+    def request_approval(self, event, strong=False):
+        raise TypeError("provider implementation failed")
+
+
 class PermissionTests(unittest.TestCase):
     def event(self, action="unknown_action", target="system_resource", details=None):
         return SecurityEvent.create(
@@ -87,6 +92,10 @@ class PermissionTests(unittest.TestCase):
         self.assertEqual(result.decision, Decision.ALLOW)
         self.assertEqual(result.decision_source, "policy")
         self.assertEqual(provider.calls, 0)
+
+    def test_provider_type_error_is_not_masked_or_retried(self):
+        with self.assertRaisesRegex(TypeError, "provider implementation failed"):
+            request_permission(self.event(), BrokenApprovalProvider())
 
 
 if __name__ == "__main__":
