@@ -32,7 +32,7 @@ Every event receives a unique request ID and UTC timestamp. Decisions record the
 
 Applications can be registered with `ApplicationRegistry`. Registration issues a random credential and stores only its SHA-256 hash in the current in-memory registry. A registration also owns its granted scopes and trust setting.
 
-Credentials can be rotated and applications can be revoked. Scopes and trust can be changed by the registry. The local service also exposes an admin-token-protected `POST /register` endpoint that issues an application credential once at registration. External HTTP callers cannot self-assert protected fields such as `application_id`, `authenticated`, `trust`, or `granted_scopes`.
+Credentials can be rotated and applications can be revoked. Scopes and trust can be changed by the registry. The local service exposes admin-token-protected application lifecycle endpoints: `POST /register` issues a credential, `POST /rotate` replaces it, `POST /revoke` removes an application, and `POST /permissions` changes its scopes/trust. External HTTP callers cannot self-assert protected fields such as `application_id`, `authenticated`, `trust`, or `granted_scopes`.
 
 The registry is currently **in memory**. Registrations therefore do not survive a service restart. Persistent OS-backed credential storage is future work.
 
@@ -57,7 +57,7 @@ python -m core.service
 
 The service binds to `127.0.0.1:8765` and refuses non-loopback binding. A service session token is generated unless `SECURITYBRIGHTNESS_TOKEN` is set.
 
-`GET /health` provides the minimal health endpoint. `POST /check` is authenticated, size-limited, JSON-only, and rejects unknown fields. `POST /register` requires the service session/admin token and creates an in-memory application registration.
+`GET /health` provides the minimal health endpoint. `POST /check` is authenticated, size-limited, JSON-only, and rejects unknown fields. `POST /register`, `/rotate`, `/revoke`, and `/permissions` require the service session/admin token. Application credentials cannot use these administrative endpoints.
 
 Registered applications authenticate with a Bearer credential plus the `X-SecurityBrightness-App` header. Their identity, trust, scopes, and request source are derived by the service rather than accepted from application JSON. Supplying an application ID with an invalid credential fails authentication instead of falling back to the service session token.
 
