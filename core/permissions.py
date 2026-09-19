@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import inspect
 
 from .approval import TerminalApprovalProvider
 from .events import SecurityEvent
@@ -23,11 +24,18 @@ class PermissionResult:
 
 
 def _ask_provider(provider, event, strong):
-    try:
-        return provider.request_approval(event, strong=strong)
-    except TypeError:
-        # Compatibility with simple/custom providers implementing the original interface.
-        return provider.request_approval(event)
+    method = provider.request_approval
+    parameters = inspect.signature(method).parameters
+    supports_strong = (
+        "strong" in parameters
+        or any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+    )
+    if supports_strong:
+        return method(event, strong=strong)
+    return method(event)
 
 
 def request_permission(event: SecurityEvent, approval_provider=None) -> PermissionResult:
