@@ -52,11 +52,14 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not_found"})
 
     def do_POST(self):
-        if self.path == "/register":
+        if self.path in {"/register", "/rotate", "/revoke", "/permissions"}:
             if not self._authorized():
                 self._send_json(401, {"error": "unauthorized"})
                 return
-            self._handle_register()
+            if self.path == "/register":
+                self._handle_register()
+            else:
+                self._handle_admin_application_action(self.path)
             return
 
         if self.path != "/check":
@@ -175,6 +178,77 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             "application_id": payload["application_id"].strip(),
             "credential": credential,
         })
+
+    def _read_admin_payload(self):
+        if self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() != "application/json":
+            self._send_json(415, {"error": "content_type_must_be_application_json"})
+            return None
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self._send_json(400, {"error": "invalid_content_length"})
+            return None
+        if length <= 0 or length > MAX_BODY_BYTES:
+            self._send_json(413, {"error": "invalid_request_size"})
+            return None
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            self._send_json(400, {"error": "invalid_json"})
+            return None
+        if not isinstance(payload, dict):
+            self._send_json(400, {"error": "request_must_be_object"})
+            return None
+        return payload
+
+    def _handle_admin_application_action(self, path):
+        payload = self._read_admin_payload()
+        if payload is None:
+            return
+        registry = self.server.application_registry
+        application_id = str(payload.get("application_id", "")).strip()
+        if not application_id:
+            self._send_json(400, {"error": "application_id_required"})
+            return
+        try:
+            if path == "/rotate":
+                unknown = set(payload) - {"application_id"}
+                if unknown:
+                    self._send_json(400, {"error": "unknown_fields", "fields": sorted(unknown)})
+                    return
+                credential = registry.rotate_credential(application_id)
+                self._send_json(200, {"application_id": application_id, "credential": credential})
+                return
+            if path == "/revoke":
+                unknown = set(payload) - {"application_id"}
+                if unknown:
+                    self._send_json(400, {"error": "unknown_fields", "fields": sorted(unknown)})
+                    return
+                if not registry.revoke(application_id):
+                    self._send_json(404, {"error": "application_not_found"})
+                    return
+                self._send_json(200, {"application_id": application_id, "revoked": True})
+                return
+            unknown = set(payload) - {"application_id", "scopes", "trusted"}
+            if unknown:
+                self._send_json(400, {"error": "unknown_fields", "fields": sorted(unknown)})
+                return
+            if "scopes" in payload:
+                registry.set_scopes(application_id, payload["scopes"])
+            if "trusted" in payload:
+                registry.set_trusted(application_id, payload["trusted"])
+            application = registry.get(application_id)
+            if application is None:
+                raise KeyError("application is not registered")
+            self._send_json(200, {
+                "application_id": application.application_id,
+                "scopes": sorted(application.scopes),
+                "trusted": application.trusted,
+            })
+        except KeyError:
+            self._send_json(404, {"error": "application_not_found"})
+        except (TypeError, ValueError) as exc:
+            self._send_json(400, {"error": "invalid_application_update", "message": str(exc)})
 
     def log_message(self, format, *args):
         return
