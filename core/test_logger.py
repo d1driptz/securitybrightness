@@ -63,6 +63,29 @@ class LoggerTests(unittest.TestCase):
             records = json.loads(log_path.read_text(encoding="utf-8"))
             self.assertEqual(len(records), 1)
 
+    def test_sensitive_detail_values_are_redacted_recursively(self):
+        event = SecurityEvent.create(
+            event_type="test",
+            source="test_suite",
+            action="read",
+            target="example.txt",
+            details={
+                "purpose": "safe to log",
+                "token": "top-secret",
+                "nested": {"password": "hidden", "note": "visible"},
+            },
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = Path(temp_dir) / "events.json"
+            with patch("core.logger.LOG_FILE", log_path):
+                log_event(event, self.result())
+
+            details = json.loads(log_path.read_text(encoding="utf-8"))[0]["details"]
+            self.assertEqual(details["purpose"], "safe to log")
+            self.assertEqual(details["token"], "[REDACTED]")
+            self.assertEqual(details["nested"]["password"], "[REDACTED]")
+            self.assertEqual(details["nested"]["note"], "visible")
+
 
 if __name__ == "__main__":
     unittest.main()
