@@ -6,6 +6,7 @@ LOG_FILE = Path("security_events.json")
 
 def log_event(event, result):
     record = {
+        "request_id": event.request_id,
         "timestamp": event.timestamp,
         "event_type": event.event_type,
         "source": event.source,
@@ -19,13 +20,19 @@ def log_event(event, result):
     }
 
     existing_events = []
-
     if LOG_FILE.exists():
         try:
-            existing_events = json.loads(LOG_FILE.read_text())
+            loaded = json.loads(LOG_FILE.read_text(encoding="utf-8"))
+            if isinstance(loaded, list):
+                existing_events = loaded
         except (json.JSONDecodeError, OSError):
             existing_events = []
 
     existing_events.append(record)
 
-    LOG_FILE.write_text(json.dumps(existing_events, indent=2))
+    temp_file = LOG_FILE.with_suffix(LOG_FILE.suffix + ".tmp")
+    temp_file.write_text(
+        json.dumps(existing_events, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    temp_file.replace(LOG_FILE)
