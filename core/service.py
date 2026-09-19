@@ -52,6 +52,13 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not_found"})
 
     def do_POST(self):
+        if self.path == "/register":
+            if not self._authorized():
+                self._send_json(401, {"error": "unauthorized"})
+                return
+            self._handle_register()
+            return
+
         if self.path != "/check":
             self._send_json(404, {"error": "not_found"})
             return
@@ -130,6 +137,44 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
             return
 
         self._send_json(200, result)
+
+    def _handle_register(self):
+        if self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() != "application/json":
+            self._send_json(415, {"error": "content_type_must_be_application_json"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self._send_json(400, {"error": "invalid_content_length"})
+            return
+        if length <= 0 or length > MAX_BODY_BYTES:
+            self._send_json(413, {"error": "invalid_request_size"})
+            return
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            self._send_json(400, {"error": "invalid_json"})
+            return
+        if not isinstance(payload, dict):
+            self._send_json(400, {"error": "request_must_be_object"})
+            return
+        unknown = set(payload) - {"application_id", "scopes", "trusted"}
+        if unknown:
+            self._send_json(400, {"error": "unknown_fields", "fields": sorted(unknown)})
+            return
+        try:
+            credential = self.server.application_registry.register(
+                payload.get("application_id", ""),
+                scopes=payload.get("scopes"),
+                trusted=payload.get("trusted", False),
+            )
+        except (TypeError, ValueError) as exc:
+            self._send_json(400, {"error": "invalid_registration", "message": str(exc)})
+            return
+        self._send_json(201, {
+            "application_id": payload["application_id"].strip(),
+            "credential": credential,
+        })
 
     def log_message(self, format, *args):
         return
