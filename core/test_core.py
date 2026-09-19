@@ -31,5 +31,24 @@ def run_tests():
     print("Reason:", result.reason)
 
 
+    # A dangerous action should be denied.
+    deny_event = SecurityEvent.create(
+        event_type="system_action",
+        source="demo_app",
+        action="disable_security",
+        target="system_resource",
+    )
+
+    result = process_event(deny_event)
+
+    print("DENY TEST")
+    print("Decision:", result.decision.value)
+    print("Reason:", result.reason)
+    print()
+
+if __name__ == "__main__":
+    run_tests()
+
+
 if __name__ == "__main__":
     run_tests()

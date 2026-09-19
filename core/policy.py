@@ -28,6 +28,16 @@ def evaluate(event: SecurityEvent) -> Decision:
     if event.action.lower() in safe_actions:
         return Decision.ALLOW
 
+    # Actions that are blocked by the baseline policy.
+    denied_actions = {
+        "delete_system_file",
+        "disable_security",
+        "bypass_permission",
+    }
+
+    if event.action.lower() in denied_actions:
+        return Decision.DENY
+
     # Everything else requires a decision rather than
     # allowing the AI or application to decide by itself.
     return Decision.ASK
