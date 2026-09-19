@@ -2,6 +2,30 @@ import json
 from pathlib import Path
 
 LOG_FILE = Path("security_events.json")
+SENSITIVE_DETAIL_KEYS = {
+    "authorization",
+    "credential",
+    "credentials",
+    "password",
+    "passwd",
+    "private_key",
+    "secret",
+    "token",
+}
+
+
+def _sanitize_details(value):
+    if isinstance(value, dict):
+        sanitized = {}
+        for key, item in value.items():
+            normalized = str(key).strip().lower()
+            sanitized[key] = "[REDACTED]" if normalized in SENSITIVE_DETAIL_KEYS else _sanitize_details(item)
+        return sanitized
+    if isinstance(value, list):
+        return [_sanitize_details(item) for item in value]
+    if isinstance(value, tuple):
+        return [_sanitize_details(item) for item in value]
+    return value
 
 
 def log_event(event, result):
@@ -12,7 +36,7 @@ def log_event(event, result):
         "source": event.source,
         "action": event.action,
         "target": event.target,
-        "details": event.details,
+        "details": _sanitize_details(event.details),
         "decision": result.decision.value,
         "decision_source": result.decision_source,
         "policy_rule": result.policy_rule,
