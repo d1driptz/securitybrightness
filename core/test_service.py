@@ -284,6 +284,16 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(status, 401)
         self.assertEqual(payload["error"], "unauthorized")
 
+    def test_empty_bearer_token_is_rejected_without_aborting_connection(self):
+        status, payload = self.request(
+            "POST",
+            "/check",
+            {"action": "read", "target": "x"},
+            token="",
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"], "unauthorized")
+
 
 if __name__ == "__main__":
     unittest.main()
