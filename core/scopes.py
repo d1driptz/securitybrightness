@@ -33,7 +33,9 @@ def normalize_scopes(scopes: Iterable[str] | None) -> set[str]:
 
 def check_scope(event: SecurityEvent) -> ScopeResult:
     required = describe_action(event.action).required_scope
-    granted_scopes = normalize_scopes(event.details.get("granted_scopes"))
+    context = event.authorization_context
+    granted_scopes = (context.granted_scopes if context is not None
+                      else normalize_scopes(event.details.get("granted_scopes")))
 
     return ScopeResult(
         required_scope=required,

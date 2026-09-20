@@ -3,7 +3,7 @@ from enum import Enum
 
 from .events import SecurityEvent
 from .actions import ACTIONS
-from .identity import TrustLevel, identify
+from .identity import TrustLevel, identify, has_application_identity
 from .policy import Decision, PolicyResult
 
 
@@ -44,7 +44,7 @@ def classify(event: SecurityEvent, policy_result: PolicyResult) -> HumanControlR
     if (
         identity.trust == TrustLevel.UNKNOWN
         and policy_result.decision == Decision.ALLOW
-        and event.details.get("application_id")
+        and has_application_identity(event)
     ):
         return HumanControlResult(
             HumanControlLevel.APPROVAL,

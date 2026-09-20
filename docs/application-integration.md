@@ -103,3 +103,5 @@ python -m examples.authorize read notes.txt --purpose "summarize notes"
 ```
 
 Exit status is 0 for allow, 2 for deny, and 3 for an input/service error. The example prints the decision and never reads the target file or executes any requested operation.
+
+For trusted in-process integrations, pass AuthorizationContext separately to check_action; it stays separate on SecurityEvent.authorization_context. Providers should read trusted identity/scopes through the context or core identity/scope helpers. Context-backed audit details no longer duplicate identity or granted scopes: use top-level authoritative decision fields. The external SDK/HTTP contract is unchanged.

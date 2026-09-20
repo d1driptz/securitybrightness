@@ -26,13 +26,18 @@ class AuthorizationContext:
             granted_scopes=frozenset(normalize_scopes(scopes)),
         )
 
-    def apply(self, details=None):
+    def validate_details(self, details=None):
         if details is not None and not isinstance(details, dict):
             raise TypeError("details must be a dictionary")
         merged = dict(details or {})
         reserved = {"application_id", "authenticated", "trust", "granted_scopes"}
         if reserved.intersection(merged):
             raise ValueError("authorization fields must come from AuthorizationContext")
+        return merged
+
+    def apply(self, details=None):
+        """Legacy trusted-Python adapter; service events keep context separate."""
+        merged = self.validate_details(details)
         merged.update({
             "application_id": self.application_id,
             "authenticated": self.authenticated,

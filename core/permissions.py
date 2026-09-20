@@ -5,7 +5,7 @@ from .approval import TerminalApprovalProvider
 from .actions import CONTROL_RISKS, describe_action
 from .events import SecurityEvent
 from .human_control import HumanControlLevel, classify
-from .identity import identify
+from .identity import identify, has_application_identity
 from .policy import Decision, evaluate
 from .scopes import check_scope
 
@@ -60,7 +60,7 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
     decision = policy_result.decision
     scope_result = check_scope(event)
     identity = identify(event)
-    identity_participates = bool(event.details.get("application_id"))
+    identity_participates = has_application_identity(event)
 
     needs_approval = control.level in {
         HumanControlLevel.APPROVAL,

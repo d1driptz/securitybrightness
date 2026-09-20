@@ -54,6 +54,9 @@ class SDKIntegrationTests(unittest.TestCase):
         self.assertEqual(result.action_category, "files")
         self.assertEqual(result.risk_level, "low")
         self.assertEqual(record["source"], "app")
+        self.assertEqual(record["details"], {"purpose": "summarize notes"})
+        self.assertEqual(record["application_id"], "app")
+        self.assertTrue(record["authenticated"])
 
     def test_prepared_proposal_preserves_snapshot_through_service_and_audit(self):
         details = {"purpose": "summarize", "context": {"items": ["bill-A"]}}

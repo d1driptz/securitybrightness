@@ -13,15 +13,13 @@ def check_action(
     approval_provider=None,
     authorization_context=None,
 ):
-    if authorization_context is not None:
-        details = authorization_context.apply(details)
-
     event = SecurityEvent.create(
         event_type=event_type,
         source=source,
         action=action,
         target=target,
         details=details,
+        authorization_context=authorization_context,
     )
     result = process_event(event, approval_provider)
     return {

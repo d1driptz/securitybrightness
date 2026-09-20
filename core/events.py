@@ -16,6 +16,15 @@ class SecurityEvent:
     target: str
     details: Dict[str, Any]
     timestamp: str
+    authorization_context: Any = None
+
+    def __post_init__(self):
+        if self.authorization_context is not None:
+            # Local import avoids the context -> scopes -> event dependency cycle.
+            from .authorization import AuthorizationContext
+            if not isinstance(self.authorization_context, AuthorizationContext):
+                raise TypeError("authorization_context must be an AuthorizationContext")
+            self.details = self.authorization_context.validate_details(self.details)
 
     @classmethod
     def create(
@@ -25,6 +34,8 @@ class SecurityEvent:
         action: str,
         target: str,
         details: Dict[str, Any] | None = None,
+        *,
+        authorization_context=None,
     ):
         values = {
             "event_type": event_type,
@@ -49,4 +60,5 @@ class SecurityEvent:
             target=target.strip(),
             details=dict(details or {}),
             timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            authorization_context=authorization_context,
         )

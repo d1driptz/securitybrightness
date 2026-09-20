@@ -51,7 +51,7 @@ The registered SDK sends an application credential, not administrative authority
 | Audit file | Locally persisted decision history with some corruption/failure handling | Tamper resistance, comprehensive secret detection, multi-process safety or complete administrative history |
 | SDK result | A validated decision response from the configured local service | An unforgeable capability, permission for a different action, or evidence that an operation ran |
 
-`AuthorizationContext.apply` currently merges trusted fields into event details; the decision core still reads identity/scopes there. That compatibility design must not be described as a complete internal separation of untrusted proposal data and authority. An eventual migration must preserve trusted callers deliberately and keep HTTP from accepting self-asserted authority.
+Service/API calls carrying an `AuthorizationContext` now keep it on `SecurityEvent.authorization_context`, separate from caller details. Identity, scopes and identity participation use that context exclusively when present. Mixed context and legacy identity details are rejected at construction. `AuthorizationContext.apply` remains an explicit legacy trusted-Python adapter; no-context Python calls still support legacy detail fields. This is data separation, not protection from hostile code in the same process.
 
 Revocation affects subsequent authentication. Existing snapshots, a review already in progress, and returned decisions are not retroactively invalidated. Whole authorization/approval transactions are not atomic with registry changes. There is no replay prevention or downstream operation binding.
 
