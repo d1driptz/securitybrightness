@@ -1,5 +1,7 @@
 # Application and AI integration
 
+This guide covers implemented integration behavior. See [Product vision](PRODUCT_VISION.md) and [Architecture](ARCHITECTURE.md) for the planned product and trust boundaries.
+
 SecurityBrightness receives a proposal and returns an authorization decision. It never runs the requested action. The application's intent, generated text, `approved` flags, and local catalog metadata cannot grant human permission.
 
 ## Provision a registered application
@@ -57,7 +59,7 @@ else:
 
 For example, with `communications.send` granted, `client.check("send_message", "recipient", details={"purpose":"reply to a question"})` waits for service-side strong confirmation. Without that scope it returns a denial without prompting. Do not build a caller-supplied approval endpoint around the SDK.
 
-The SDK's `timeout` is a socket timeout (60 seconds by default), not a human-approval deadline. Invalid responses also leave the outcome unknown. If a transport failure reports `outcome_unknown=True`, the service may still be reviewing or may already have recorded a decision. Treat that as no usable permission, do not perform the proposed action, and do not automatically resubmit it. Use the service/audit view to reconcile first. There is no asynchronous review queue, cancellation, polling, or idempotency protocol yet.
+The SDK's `timeout` is a socket timeout (60 seconds by default), not a human-approval deadline. Invalid responses also leave the outcome unknown. If a transport failure reports `outcome_unknown=True`, the service may still be reviewing or may already have recorded a decision. Treat that as no usable permission, do not perform the proposed action, and do not automatically resubmit it. Inspect the service terminal and audit file to reconcile first; there is no audit-view application yet. There is no asynchronous review queue, cancellation, polling, or idempotency protocol yet.
 
 ## Discover actions and interpret risk
 

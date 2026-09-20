@@ -12,9 +12,9 @@ HTTP input now uses one strict decoder and a five-second absolute read deadline.
 
 Approval providers must return booleans and support `strong=True` for high-impact review. Audit logging uses a process-local lock and unique synchronized temporary files; corrupt or unavailable audit history fails closed without overwriting it. HTTP returns 503 for audit persistence or approval contract errors. Key-based redaction covers common spelling variants, not free-text secrets.
 
-The shared `actions` catalog supplies policy, scopes, and Human Control with the existing action vocabulary. `sdk.ApplicationClient` is the registered-application integration entry point; it returns explicit structured decisions and never executes or approves proposals. API/audit results include effective review risk, action category, and review explanation. See `docs/application-integration.md` for the complete workflow.
+The shared `actions` catalog supplies policy, scopes, and Human Control with the existing action vocabulary. `sdk.ApplicationClient` is the registered-application integration entry point; it returns explicit structured decisions and never executes or approves proposals. API/audit results include effective review risk, action category, and review explanation. See the [integration guide](../docs/application-integration.md) for the complete workflow.
 
-See the root README for the HTTP contract, compatibility changes, and remaining security limitations.
+See [Current behavior](../docs/CURRENT_BEHAVIOR.md) for the HTTP contract, compatibility changes and limitations. Follow the [Product vision](../docs/PRODUCT_VISION.md) and [Architecture](../docs/ARCHITECTURE.md) when extending the core.
 
 Run from the repository root:
 
