@@ -124,3 +124,7 @@ Platform/OS mediation, sandboxes, service-specific brokers, additional SDK langu
 These are dependency-based priorities, not dates or claims of implementation. Evolve the sequence when evidence warrants it. Material changes to human authority, delegation, persistent grants, network exposure or execution require a recorded design and product-owner input; normal implementation within agreed boundaries can proceed autonomously.
 
 Every substantial batch should identify the capability advanced, preserve compatible behavior unless security requires a documented change, test meaningful regressions and workflows, run the complete suite, review the diff, update implementation/evidence documentation, and verify the published branch. See [current service behavior](CURRENT_BEHAVIOR.md) for current limitations rather than interpreting the plan as a security guarantee.
+
+## Pending architecture decisions
+
+[Proposal lifecycle and human authority](decisions/0001-proposals-and-human-authority.md) describes the next workflow and a pending product-owner choice about the first graphical approval threat model. It is a proposal, not an implemented contract or an approved change to authority.
