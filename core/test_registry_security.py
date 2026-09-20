@@ -185,7 +185,7 @@ class OperatorSummaryTests(unittest.TestCase):
         credential = registry.register("app", ["files.read"])
         snapshot = registry.list_applications()
         self.assertEqual(len(snapshot), 1)
-        self.assertEqual(set(asdict(snapshot[0])), {"application_id", "scopes", "trusted"})
+        self.assertEqual(set(asdict(snapshot[0])), {"application_id", "scopes", "trusted", "grant_id", "created_at", "updated_at", "lifetime", "expires_at", "active"})
         self.assertNotIn(credential, repr(snapshot))
         self.assertNotIn(registry.get("app").credential_hash, repr(snapshot))
         with self.assertRaises(FrozenInstanceError):
@@ -196,6 +196,7 @@ class OperatorSummaryTests(unittest.TestCase):
         self.assertTrue(fresh.trusted)
         self.assertEqual(fresh.scopes, frozenset({"files.write"}))
         registry.rotate_credential("app")
-        self.assertEqual(registry.list_applications()[0], fresh)
+        self.assertEqual(registry.list_applications()[0].scopes, fresh.scopes)
+        self.assertNotEqual(registry.list_applications()[0].grant_id, fresh.grant_id)
         registry.revoke("app")
         self.assertEqual(registry.list_applications(), ())

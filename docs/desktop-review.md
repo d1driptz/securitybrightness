@@ -1,6 +1,6 @@
 # Desktop human review (prototype A)
 
-Run `python -m core.desktop` from the repository root, instead of `python -m core.service`. Python must include Tkinter. The desktop owns the existing loopback service at 127.0.0.1:8765, so stop an already running instance first. The console prints a generated administrator token unless SECURITYBRIGHTNESS_TOKEN is configured. Keep it private. Provision applications through the existing [integration guide](application-integration.md); the desktop can display registrations and current scopes but does not yet create/change them or persist permissions.
+Run `python -m core.desktop` instead of `python -m core.service`. Python must include Tkinter. The desktop owns the loopback service at 127.0.0.1:8765; stop any previous instance first. Keep the generated console admin token private. Provision through the [integration guide](application-integration.md). Optional [--store persistence](persistent-authority.md) restores grants locked, with operator unlock and inactive revocation in the desktop.
 
 Application/AI intent does not equal human permission. This prototype trusts the local Windows operator environment. **It does not protect against malicious processes running under the same Windows account.** [Decision 0001](decisions/0001-proposals-and-human-authority.md) records A and makes B a required hardening milestone before strong local enforcement claims.
 
@@ -16,9 +16,9 @@ The SDK's default 60-second socket timeout can occur before review expires. Time
 
 ## Inspect current application authority
 
-The Applications tab lists registered application IDs, trust settings and action scopes from the desktop-owned service. It refreshes about once per second. An arriving human-review request selects the Human review tab, without submitting an answer. Select a row to read its complete scope list. Values are escaped, and neither raw credentials nor credential hashes are sent to this view. The table is read-only; use the existing administrator endpoints for lifecycle changes. An empty scope list does not grant access. Trust does not bypass scope checks or strong confirmation.
+Applications shows identity, trust, stored scopes and active/locked state, refreshed about once per second. Select a row for complete scope/lifetime/creation/change information. Neither credentials nor hashes are displayed. Persistent mode supports exact-version confirmed unlock and Lock all; confirmed Revoke works while inactive. Registration, rotation and scope changes remain administrative operations. Empty scopes grant no access; trust never bypasses scopes or strong confirmation. An arriving review selects the Human review tab without answering it.
 
-The registry supplies immutable credential-free ApplicationSummary snapshots under its existing lock. The UI receives only a read callback, not a credential-bearing registry object. A failed refresh marks the display as unavailable/stale; the displayed snapshot is never used for authorization. It does not show live OS processes, persistent grants, or the permissions of arbitrary third-party applications.
+The registry supplies immutable credential-free summaries. The UI receives specific read/operator callbacks, not a credential-bearing registry object. A failed refresh marks the view stale. Unlock/revoke revalidate the selected grant version instead of trusting stale display data. This is not a list of OS processes or arbitrary third-party permissions.
 
 ## Boundary and replacement path
 
@@ -30,4 +30,4 @@ A future B implementation replaces this in-process transport with an authenticat
 
 ## Remaining limitations
 
-The service remains single-threaded: waiting for human review also delays other HTTP requests, including administration. Revocation is not atomic with an in-progress authorization. There is no application-facing polling/cancellation API, persistent review queue, notification delivery, application-management controls, authenticated human account model or isolated process boundary. Scope checks still use broad action scopes. Audit failures remain fail-closed, but audit history is not tamper-proof and failed review-channel attempts have no final decision record.
+The single HTTP worker waits during review. Trusted desktop lifecycle changes can still occur; registered requests revalidate after review so old approval cannot revive changed/locked/revoked authority. There is no application-facing polling/cancellation API, durable review queue, notification delivery, full management UI, authenticated human account or isolated process boundary. Scopes remain broad. Audit failure is fail-closed, but history is not tamper-proof and failed reviews/revalidation have no final decision record.

@@ -12,6 +12,7 @@ def check_action(
     details: Dict[str, Any] | None = None,
     approval_provider=None,
     authorization_context=None,
+    authorization_guard=None,
 ):
     event = SecurityEvent.create(
         event_type=event_type,
@@ -21,7 +22,7 @@ def check_action(
         details=details,
         authorization_context=authorization_context,
     )
-    result = process_event(event, approval_provider)
+    result = process_event(event, approval_provider, authorization_guard)
     return {
         "request_id": event.request_id,
         "timestamp": event.timestamp,

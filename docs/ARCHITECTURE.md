@@ -12,7 +12,7 @@ The initial inventory below was reviewed against commit `e1144ba42ec1642e96c8d88
 | --- | --- | --- |
 | Action/target/details events with generated request IDs and UTC timestamps | [events.py](../core/events.py) | [test_events.py](../core/test_events.py). Strings and details types are checked; this is not a rich resource/effect schema. |
 | Shared action categories, required scopes, baseline review and reported risk | [actions.py](../core/actions.py), [policy.py](../core/policy.py), [human_control.py](../core/human_control.py), [scopes.py](../core/scopes.py) | [test_actions.py](../core/test_actions.py), [test_policy.py](../core/test_policy.py), [test_scopes.py](../core/test_scopes.py). Sensitivity uses labels/target markers; risk describes review level rather than independently verified impact. |
-| In-memory registered applications, hashed random credentials, scope/trust changes, rotation and revocation | [registry.py](../core/registry.py) | [test_registry.py](../core/test_registry.py), [test_registry_security.py](../core/test_registry_security.py). Immutable snapshots and process-local locking; no durable grant store, automatic expiry or resource constraints. |
+| Session-only or optional persistent registrations, hashed credentials and lifecycle operations | [registry.py](../core/registry.py), [authority_store.py](../core/authority_store.py) | [test_registry.py](../core/test_registry.py), [test_registry_security.py](../core/test_registry_security.py), [test_persistence.py](../core/test_persistence.py). Immutable snapshots, locked persistent startup, exact-version human unlock and final revalidation. No timestamp expiry or resource constraints. |
 | Server-derived application identity and internal authorization context | [service.py](../core/service.py), [authorization.py](../core/authorization.py), [identity.py](../core/identity.py) | [test_service.py](../core/test_service.py), [test_authorization.py](../core/test_authorization.py), [test_identity.py](../core/test_identity.py). HTTP rejects caller-authored identity fields; direct Python APIs still trust in-process callers. |
 | Policy denial, missing-scope denial before prompting, approval and strong confirmation | [permissions.py](../core/permissions.py), [approval.py](../core/approval.py) | [test_permissions.py](../core/test_permissions.py), [test_approval.py](../core/test_approval.py), [test_approval_security.py](../core/test_approval_security.py). Terminal review shows proposal context, the permission engine's policy/review explanations, and an unverified requester explanation in both approval modes. Review is synchronous; providers are trusted code, not verified human identity. |
 | Optional trusted-operator desktop review | [desktop.py](../core/desktop.py), [review_channel.py](../core/review_channel.py) | [test_review_channel.py](../core/test_review_channel.py), [test_desktop.py](../core/test_desktop.py), [test_sdk.py](../core/test_sdk.py). Credential-free immutable review messages and registration summaries, bounded ephemeral channel, strong confirmation and fail-closed expiry/closure. Trusted local OS session only; no HTTP approval route or isolated Windows broker. |
@@ -37,7 +37,7 @@ Application / AI adapter proposes an action and target
 
 `GET /health` is minimal health information. `POST /check` is the decision endpoint. `/register`, `/rotate`, `/revoke` and `/permissions` require the service/admin token and reject application-mode headers. No HTTP endpoint accepts a human approval or provides pending-review state.
 
-The registered SDK sends an application credential, not administrative authority. Legacy checks with the service token and no application identity remain supported; they do not enforce registered-application scopes. They are a privileged compatibility path, not the model for an untrusted application.
+The registered SDK sends an application credential, not administrative authority. Default session-only mode retains the privileged admin-token/no-application compatibility path without registered scopes. Opt-in persistent mode rejects that path so it cannot bypass inactive grants. It is not the model for untrusted applications.
 
 ### Current trust boundaries
 
@@ -53,7 +53,7 @@ The registered SDK sends an application credential, not administrative authority
 
 Service/API calls carrying an `AuthorizationContext` now keep it on `SecurityEvent.authorization_context`, separate from caller details. Identity, scopes and identity participation use that context exclusively when present. Mixed context and legacy identity details are rejected at construction. `AuthorizationContext.apply` remains an explicit legacy trusted-Python adapter; no-context Python calls still support legacy detail fields. This is data separation, not protection from hostile code in the same process.
 
-Revocation affects subsequent authentication. Existing snapshots, a review already in progress, and returned decisions are not retroactively invalidated. Whole authorization/approval transactions are not atomic with registry changes. There is no replay prevention or downstream operation binding.
+Registered HTTP requests capture registry and activation identity. After review, final revalidation and audit persistence serialize with registry changes; stale, rotated, revoked or locked authority cannot return authorization. Lock-and-reunlock does not revive the old request. Previously committed decisions are not retroactively withdrawn or bound to downstream effects. Trusted embedded Python callers must explicitly pass a registry authorization lease guard rather than infer validity from a manually constructed context.
 
 The `notify` level is classification metadata only; there is no separate notification delivery mechanism. The standalone [browser scanner](../index.html) and the bundled SoulScript ZIP are separate artifacts, not the human-control application or an enforcement layer. Core tests do not validate them as such.
 
@@ -90,7 +90,7 @@ Storage should protect credentials and policy integrity, support migrations/reco
 
 Retain a proportionate spectrum: automatic decisions within legitimate delegated authority, useful notifications, explicit approval, strong confirmation, and policy denial. A review should identify the requesting application, proposed effects, applicable limits, why review is needed, and what approval would permit. Display requester-authored explanations as untrusted context. Never silently expand permission to avoid repeated prompts.
 
-The desktop implements proposal review and a credential-free read-only registration/scope view. The planned full SecurityBrightness application should expose connected applications, current authority, pending reviews, explanations, decisions and revocation controls. A future asynchronous workflow needs explicit pending/approved/denied/cancelled/expired states, ownership, duplicate-request handling and disconnect recovery. There are no application-facing endpoints for those states now; the optional desktop channel has only ephemeral pending/answer/expiry handling inside the trusted process. Establish separate authenticated human authority and protect approval against caller impersonation before adding an approval API. A client timeout must not count as consent or trigger automatic resubmission.
+The desktop implements proposal review, credential-free authority inspection, exact-version unlock and confirmed revocation. Broader management/history remains planned. A future asynchronous workflow needs explicit states, ownership, duplicate handling and disconnect recovery. There are no application-facing lifecycle endpoints for reviews now; the desktop channel is ephemeral inside the trusted process. Establish separate authenticated human authority before adding an approval API. A client timeout never counts as consent or triggers automatic resubmission.
 
 ### SDK/API and enforceable integrations
 
@@ -130,4 +130,26 @@ Every substantial batch should identify the capability advanced, preserve compat
 
 [Proposal lifecycle and human authority](decisions/0001-proposals-and-human-authority.md) records the accepted A prototype threat model and required migration milestone B. Trust the local operator environment for the first desktop reviewer; do not claim protection against hostile same-user processes. The versioned/asynchronous application contract remains future design.
 
-[Persistent registration and authority lifecycle](decisions/0002-persistent-authority-lifecycle.md) proposes the next persistence boundary. Whether saved grants activate automatically or require operator unlock after restart is pending product-owner input; persistence is not implemented.
+[Persistent registration and authority lifecycle](decisions/0002-persistent-authority-lifecycle.md) records the accepted explicit-unlock rule. The implemented opt-in [persistent authority](persistent-authority.md) store restores all grants inactive. Desktop controls inspect scope/lifetime/state, confirm exact-version unlock, lock all and revoke inactive grants. [authority_store.py](../core/authority_store.py) and [test_persistence.py](../core/test_persistence.py) provide storage and regression evidence. Default registries remain session-only; OS-protected storage custody and recovery are not implemented.
+
+## Expanded platform responsibilities (planned, not current enforcement)
+
+Trust does not imply authority, including for SecurityBrightness itself. Keep these responsibilities separate:
+
+| Component | Intended authority | Authority it must not inherit |
+| --- | --- | --- |
+| Policy/authorization core | Evaluate authenticated proposals and grants | Arbitrary execution or human impersonation |
+| Human Review/authentication | Obtain bounded human decisions through a trusted channel | Application credentials as human proof |
+| Integrated enforcement adapter | Mediate its explicitly controlled resource boundary | Unrestricted OS authority or universal third-party control |
+| Device Security | Observe/assess specifically authorized signals | Automatic control over observed applications or execution |
+| File Security | Analyze explicitly supplied files within a defined analysis boundary | Grant editing, human approval, unsafe execution of samples |
+| Security Assistant | Read permitted evidence, explain, navigate and propose | Approve, silently change policy, possess universal admin authority |
+| Management | Explicit lifecycle operations in its own authority boundary | Substitute administrative access for human consent/unlock |
+| Audit/history | Persist/expose authorized security evidence | Treat unverified assertions as proof or leak credentials |
+| Update/recovery | Future narrowly scoped authenticated maintenance | Unsigned updates, authority rollback or unrestricted shell access |
+
+These are design responsibilities, not a claim that the current Python process already isolates them. Prototype A relies on trusted in-process components. Future isolation should limit compromise propagation; B, privileged monitoring, OS enforcement, human authentication and security-sensitive model integrations require explicit owner-approved designs.
+
+Integrated application protection and Device Security are distinct. Represent observed, integrated and genuinely enforced coverage honestly. The current scanner must be inspected before reuse, and no detection claim is justified merely by its UI. Ordinary and AI applications share the same intent/authority separation. Existing application protections should remain complementary.
+
+Persistent grants must start inactive, show stored versus active state and applicable lifetime, and be revocable while inactive. Unlock is a trusted human action, never a restart/admin/application/caller flag. Before final authorization, revalidate current authority after review so rotation, revocation, changes, expiry or locking cannot resurrect stale grants. No grant record or approval permits execution by this core.

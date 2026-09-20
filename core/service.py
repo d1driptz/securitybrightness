@@ -9,7 +9,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from .api import check_action
 from .authorization import AuthorizationContext
-from .registry import ApplicationRegistry
+from .registry import ApplicationRegistry, AuthorityInactiveError
+from .authority_store import AuthorityStoreError
 from .json_input import loads as strict_json_loads
 from .logger import AuditLogError
 from .permissions import ApprovalProviderError
@@ -129,7 +130,7 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         credential = self._bearer_token()
         registry = getattr(self.server, "application_registry", None)
         if application_id and registry is not None:
-            return registry.authenticate(application_id, credential)
+            return registry.authenticate(application_id, credential, allow_inactive=True)
         return None
 
     def _authorized(self):
@@ -150,6 +151,12 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not_found"})
 
     def do_POST(self):
+        try:
+            self._do_POST()
+        except (AuthorityStoreError, AuthorityInactiveError):
+            self._send_json(503, {"error": "authority_unavailable"})
+
+    def _do_POST(self):
         if self.path in {"/register", "/rotate", "/revoke", "/permissions"}:
             if "X-SecurityBrightness-App" in self.headers or not self._authorized():
                 self._send_json(401, {"error": "unauthorized"})
@@ -171,6 +178,13 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         if application is None and not self._authorized():
             self._send_json(401, {"error": "unauthorized"})
             return
+
+        registry = self.server.application_registry
+        if registry.persistent and application is None:
+            # The privileged legacy path cannot bypass persistent human activation.
+            self._send_json(403, {"error": "registered_application_required"})
+            return
+        authorization_guard = registry.authorization_lease(application) if application is not None else None
 
         payload = self._read_json_payload()
         if payload is None:
@@ -213,6 +227,7 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
                 details=details,
                 authorization_context=authorization_context,
                 approval_provider=self.server.approval_provider,
+                authorization_guard=authorization_guard,
             )
         except AuditLogError:
             self._send_json(503, {"error": "audit_unavailable"})

@@ -16,7 +16,7 @@ Content-Type: application/json
 {"application_id":"notes-assistant","scopes":["files.read","communications.send"],"trusted":false}
 ```
 
-Give the returned application credential and ID to the application. Keep the admin token out of the application/AI process and prompts. Registration, scope changes, rotation, and revocation remain administrator operations. The SDK intentionally exposes no administrative methods. The current registry is in memory, so re-provision after restarting the service.
+Give the returned credential and ID to the application; keep the admin token out of application/AI processes and prompts. The SDK exposes no admin methods. Default registries are session-only. In [opt-in persistent mode](persistent-authority.md), grants start inactive and need explicit operator unlock; application/admin credentials cannot activate them. Updates and rotation create inactive versions. Valid credentials for inactive or invalidated authority receive 503, never permission. Persistent mode rejects admin-token-only /check rather than permitting an unlock bypass. Existing application request/response schemas remain unchanged.
 
 ## Submit a proposal
 

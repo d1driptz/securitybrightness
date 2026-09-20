@@ -42,7 +42,7 @@ Registry inputs are validated before mutation: application IDs must be nonempty 
 
 Security-related compatibility changes: values such as `trusted="false"`, numeric application IDs, non-string/blank scope entries, and mutation of returned registration objects are now rejected. Valid existing credentials and normal lifecycle requests retain their behavior. `AuthorizationContext` validates direct construction as well as its authenticated factory, and rejects non-dictionary caller details.
 
-The registry is currently **in memory**. Registrations therefore do not survive a service restart. Persistent OS-backed credential storage is future work.
+The default registry is **in memory**. [Opt-in persistence](persistent-authority.md) stores hashed credentials and grants, but restores all authority inactive until explicit operator unlock. OS-backed isolated storage custody remains future work.
 
 ## Python API
 
@@ -117,7 +117,7 @@ SecurityBrightness does not yet execute authorized actions. The audit file is us
 
 Audit updates are serialized between threads in the same process. Each write uses a unique temporary file, flushes and synchronizes it, then atomically replaces the log. Malformed, ambiguous, unreadable, or non-array audit history is preserved and raises `AuditLogError`; it is never silently reset. A persistence failure prevents a successful authorization response (HTTP 503 `audit_unavailable`). An operator must repair or archive a damaged log deliberately before checks can resume. This is a security-related compatibility change from replacing corrupt history.
 
-The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers. Authenticated identity and scopes can now be passed separately through an internal `AuthorizationContext`, rather than requiring transport authentication data to be authored directly in caller event details. The HTTP service constructs this context from the registry after credential verification.
+The optional persistent registry does not use an operating-system credential store. The direct Python API remains for trusted callers. HTTP constructs a separate AuthorizationContext after credential verification, captures a registry/activation lease, and revalidates it after review before audit persistence. Manually constructed contexts are not proof of current registry authority.
 
 Known remaining weaknesses requiring further batches:
 
@@ -125,7 +125,7 @@ Known remaining weaknesses requiring further batches:
 - The service remains single-threaded. The read deadline bounds one slow request, but repeated connections, queued connections, and pending terminal approval can still delay others. There is no rate limiting; the optional desktop review still blocks the single HTTP worker. Extremely large/rejected uploads may still end in a connection reset.
 - Approval providers are trusted in-process code. Accepting `strong=True` cannot prove that a provider actually obtained human confirmation; the service does not sandbox providers or bind an approval cryptographically to later execution.
 - Audit logs are not tamper-proof, have no rotation/size cap, and rewrite the entire history on each event. The lock does not coordinate multiple processes; use a single writer. Atomic replacement and file synchronization do not guarantee directory durability across every power-loss scenario. Free-text secrets can leak, and lifecycle changes are not audited.
-- Policies infer sensitivity from action/target labels, scopes are not resource-specific, and authorization is not bound to a later execution. Registry locking does not make an entire authorization/approval flow atomic with revocation.
+- Policies infer sensitivity from labels, scopes are not resource-specific and authorization is not bound to later execution. Final registered-request revalidation and audit persistence serialize with lifecycle changes, but committed decisions are not retroactively revocable capabilities.
 - The standalone `index.html` scanner and the bundled SoulScript ZIP are separate artifacts, not authorization enforcement components. The core unittest suite does not test their behavior.
 
 ## Tests
@@ -148,4 +148,4 @@ The HTTP request and response contracts are unchanged. Audit records for context
 
 Trusted Python approval providers should use event.authorization_context (when present), identify(event) and check_scope(event), rather than assume authentication fields live in details. AuthorizationContext.apply remains a legacy adapter and existing no-context trusted Python calls retain legacy detail-field behavior. Neither an internal context object nor an in-process provider is a security boundary against hostile Python code.
 
-The desktop Applications tab displays immutable credential-free registry summaries (application ID, trust setting and current scopes), refreshed about once per second. ApplicationRegistry.list_applications() snapshots those fields under the registry lock; it does not return credential hashes. The UI is read-only and a stale/unavailable display never participates in authorization. No new HTTP endpoint or lifecycle authority was added.
+The Applications tab displays immutable credential-free summaries: identity, trust, scopes, stored/active state, grant version, creation/change timestamps, lifetime and expiry placeholder. It supports confirmed exact-version unlock and revocation, plus locking all persisted authority. No HTTP unlock endpoint exists. See [persistent authority](persistent-authority.md) for inactive startup, failure behavior and the opt-in restriction on admin-token-only checks. Timestamp expiry and one-shot grants remain unsupported and fail closed if found in a stored record.

@@ -16,6 +16,8 @@ The shared `actions` catalog supplies policy, scopes, and Human Control with the
 
 See [Current behavior](../docs/CURRENT_BEHAVIOR.md) for the HTTP contract, compatibility changes and limitations. Follow the [Product vision](../docs/PRODUCT_VISION.md) and [Architecture](../docs/ARCHITECTURE.md) when extending the core.
 
+Optional SQLiteAuthorityStore persists validated registrations and grant metadata, never activation. Registered HTTP requests capture a registry/activation lease and revalidate it after Human Review before audit persistence. See [persistent authority](../docs/persistent-authority.md) for explicit unlock, inactive revocation, lifecycle metadata and storage limits. Default embedded registries remain session-only; guards/providers are trusted-process interfaces, not OS isolation.
+
 Run from the repository root:
 
 ```bash

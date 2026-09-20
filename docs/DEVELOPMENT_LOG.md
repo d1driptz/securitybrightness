@@ -68,3 +68,13 @@ This log records scope, evidence and limits, not a claim of complete security. C
 - Recorded two startup activation choices and storage/rollback constraints. No persistence, unlock endpoint or lifetime extension is implemented by this documentation.
 - Reviewed against the current ephemeral registry and accepted A-to-B migration. Unchanged code baseline: 174 passed in 11.391s; documentation links checked. This is not an additional test-count milestone.
 - Owner input is required because surviving a restart changes the lifetime/activation of human-delegated authority, not merely the file format.
+
+## Explicit-unlock persistence and final authority revalidation
+
+- Recorded the accepted unlock rule and expanded protection mission: trust is not authority, observed is not controlled, and SecurityBrightness components require separate least-privilege boundaries. Device Security, File Security and Security Assistant remain planned, not implemented protection claims.
+- Added opt-in versioned SQLite storage, single-owner transactions, strict startup validation and commit-before-success lifecycle changes. Persistent authority starts inactive, including new/changed/rotated versions. No activation flag or raw application credential is stored.
+- Desktop authority inspection shows stored/active state, identity, scope, creation/change metadata and lifetime. Human-confirmed exact-version unlock, locking and inactive revocation do not have HTTP equivalents. Persistent mode rejects the legacy admin-only check bypass; default session-only compatibility remains.
+- Registered requests capture an activation lease and revalidate after review under the same registry lock as audit persistence. Revocation, rotation, scope changes, locking and lock-and-reunlock cannot revive an old review.
+- Baseline: 174 passed in 9.762s. Focused persistence/desktop run: 13 passed in 7.766s before adding the real SQLite write-denial regression. Final full suite: 187 passed in 19.807s, no skips. Windows test cleanup was corrected to close its SQLite connections explicitly; no product security behavior was mocked to make the suite pass.
+- Reviewed privilege boundaries, store corruption/version/lifetime rejection, actual SQLite rollback, second-owner rejection, credential non-disclosure, stale UI confirmations, failed admin writes and real SDK/HTTP post-review invalidation. Publication is recorded by this entry's commit and branch history.
+- Limits: prototype A, inherited Windows directory permissions, no DPAPI/encryption/rollback protection, no timestamp expiry/one-shot grants, no comprehensive lifecycle audit, separate registry and decision-audit transactions, synchronous HTTP and no downstream execution binding. Stronger claims require B and independent evidence.

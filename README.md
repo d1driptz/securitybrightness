@@ -39,7 +39,7 @@ For graphical human review, run `python -m core.desktop` instead of the terminal
 
 ## Boundaries
 
-The registry is in memory, review is synchronous terminal or optional desktop input, and audit history is not tamper-proof. The direct Python API is for trusted in-process callers. Desktop review and a read-only application/scope view are available; lifecycle-management controls, expiring/resource-specific grants, OS interception, and execution brokers are not implemented.
+The default registry is in memory; [opt-in persistence](docs/persistent-authority.md) restores grants locked until explicit operator unlock. Desktop review, authority inspection, unlock and confirmed revocation are available. Review remains synchronous, audit history is not tamper-proof, and the direct Python API is for trusted callers. Expiring/resource-specific grants, OS interception and execution brokers are not implemented.
 
 An application must integrate with an enforcement point SecurityBrightness controls for actions at that point to be governed. Merely installing this project does not stop another application from bypassing a decision. Deeper OS integration is a longer-term possibility, not an existing feature. Any future execution layer requires a separate decision and isolation; arbitrary AI intent must never become unrestricted shell/OS execution.
 

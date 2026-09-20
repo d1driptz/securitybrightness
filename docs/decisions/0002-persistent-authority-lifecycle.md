@@ -1,10 +1,10 @@
 # Persistent registration and authority lifecycle
 
-Status: PROPOSED. Persistence and startup unlocking are not implemented. Product-owner input is required on the lifetime/activation of saved authority.
+Status: ACCEPTED: explicit operator unlock, chosen by the product owner. Stored authority starts inactive on every startup. Restart, application/admin credentials and caller data never unlock it.
 
-## Current behavior and motivation
+## Decision baseline and motivation
 
-Today the registry lives in memory. Stopping the service discards registrations, credential hashes, scope grants and trust settings. Applications must be provisioned again. The new desktop can review proposals and inspect credential-free registration summaries, but cannot restore them. This makes repeated use inconvenient and prevents the planned persistent-policy product experience.
+At the decision baseline, the registry was session-only, requiring applications to be provisioned again after restart. The accepted opt-in implementation is now documented in [Persistent authority](../persistent-authority.md): explicit operator unlock, inactive revocation, creation/lifetime metadata and final revalidation. Default nonpersistent operation remains supported.
 
 Persisting the registry would extend the lifetime of application credentials and delegated authority beyond a service session. Restoring a scope such as files.read could allow automatic checks after restart without a fresh human interaction. That is a change to human-authority lifetime, even though consequential actions would still require their existing approval/strong-confirmation rules. It must be explicit rather than an incidental file-storage implementation detail.
 
@@ -18,9 +18,9 @@ Persisting the registry would extend the lifetime of application credentials and
 - Persist a lifecycle change before reporting success. Atomic storage updates, single-writer ownership, recovery and migration must be tested. Keep audit/registry consistency limits explicit; do not claim a transaction spanning independent files without implementing one.
 - Do not import untrusted files as authority, provide a network restore API, embed secrets in audit messages, or turn an application credential into a human unlock mechanism.
 
-## Decision required: when does saved authority become active?
+## Accepted activation rule
 
-### A. Operator unlock after every restart (recommended first persistent release)
+### A. Operator unlock after every restart (accepted)
 
 Restore registrations into a locked state. Existing application credentials and saved grants do not yield usable authorization until the trusted local operator explicitly enables the saved authority for the current service session. The desktop must show what is being enabled and its limitations; automatic launch alone is not unlocking. No application/admin HTTP token substitutes for that human action. A locked service must fail closed with a documented unavailable response, without prompting the application or silently retrying.
 
@@ -28,7 +28,7 @@ Unlocking activates the saved grants; it does not approve individual consequenti
 
 Benefit: saving registrations does not silently make a service restart a renewal of unattended authority. Cost: unattended startup waits for the operator, and unlocking a saved broad grant is itself a consequential delegation that must be presented clearly.
 
-### B. Automatically restore previously granted authority
+### B. Automatically restore previously granted authority (not selected)
 
 Saved registrations/scopes/trust become active when the opted-in service starts. The original grant persists until explicit durable revocation or a future defined expiry mechanism. The operator must understand this lifetime when granting authority or enabling persistence. Automatic read-like proposals may then be allowed without a new interaction after restart; consequential actions retain the existing approval requirements.
 
@@ -46,4 +46,4 @@ Temporary/resource-specific grants, clock/expiry semantics, cross-device recover
 
 Test restart behavior in the chosen activation mode, durable revocation and credential rotation, invalid/corrupt/future-version stores, write failure before success, simultaneous writers, unchanged application API behavior, locked/unavailable failure handling if selected, and separation of application/admin credentials from human activation. Verify no raw application credential is stored or sent to the GUI. Document residual filesystem and power-loss limits.
 
-No option is selected by publishing this proposal. The product owner must choose the activation/lifetime behavior before implementation changes the current service-session authority boundary.
+The operator must see identity, scopes, stored/active status and creation/expiry metadata, and be able to revoke inactive authority. The initial model keeps room for future session-only, expiring, one-shot and deliberately persistent policies; unsupported lifetime modes must not be silently accepted. No default automatic activation is authorized.
