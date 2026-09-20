@@ -43,6 +43,18 @@ class ServiceTests(unittest.TestCase):
         connection.close()
         return status, payload
 
+    @patch("core.service.check_action")
+    def test_application_and_admin_tokens_have_no_human_approval_route(self, check_action):
+        credential = self.server.application_registry.register("app", ["communications.send"])
+        for token, app_id in ((TOKEN, None), (credential, "app")):
+            for path in ("/approve", "/review", "/reviews/respond"):
+                with self.subTest(path=path, application=app_id):
+                    status, _ = self.request("POST", path,
+                                             {"review_id": "claimed", "approved": True},
+                                             token=token, application_id=app_id)
+                    self.assertEqual(status, 404)
+        check_action.assert_not_called()
+
     def test_health_endpoint(self):
         status, payload = self.request("GET", "/health", token=None)
         self.assertEqual(status, 200)

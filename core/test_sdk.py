@@ -3,6 +3,8 @@ import json
 import socket
 import tempfile
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 import unittest
 from contextlib import redirect_stdout
 from dataclasses import asdict
@@ -12,6 +14,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 
 from core.proposal import ActionProposal
+from core.review_channel import OperatorReviewChannel
 from core.registry import ApplicationRegistry
 from core.sdk import ActionDenied, ApplicationClient, AuthorizationResult, SDKError, MAX_MESSAGE_BYTES
 from core.service import create_server
@@ -127,6 +130,36 @@ class SDKIntegrationTests(unittest.TestCase):
             self.assertIn("STRONG CONFIRMATION", output.getvalue())
             self.assertIn(result.review_reason, output.getvalue())
             self.assertIn(result.request_id, output.getvalue())
+
+    def test_operator_channel_integrates_without_application_api_changes(self):
+        channel = OperatorReviewChannel(timeout=2)
+        self.addCleanup(channel.close)
+        self.server.approval_provider = channel
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(self.client.check, "send_message", "recipient")
+            deadline = time.monotonic() + 1
+            while not channel.pending_reviews() and time.monotonic() < deadline:
+                time.sleep(0.005)
+            reviews = channel.pending_reviews()
+            self.assertEqual(len(reviews), 1)
+            self.assertEqual(reviews[0].application_id, "app")
+            self.assertTrue(reviews[0].authenticated)
+            self.assertTrue(channel.respond(reviews[0].review_id, True, confirmation="ALLOW"))
+            result = future.result(timeout=1)
+        self.assertTrue(result.allowed)
+        self.assertEqual(result.request_id, reviews[0].request_id)
+        record = json.loads(self.log.read_text())[0]
+        self.assertEqual(record["decision"], "allow")
+        self.assertEqual(record["request_id"], result.request_id)
+
+    def test_failed_operator_channel_does_not_fall_back_to_terminal(self):
+        channel = OperatorReviewChannel(timeout=0.02)
+        self.server.approval_provider = channel
+        with patch("builtins.input") as terminal:
+            with self.assertRaises(SDKError) as caught:
+                self.client.check("send_message", "recipient")
+        self.assertEqual(caught.exception.status, 503)
+        terminal.assert_not_called()
 
     def test_rotated_and_revoked_credentials_fail_authentication(self):
         fresh = self.registry.rotate_credential("app")

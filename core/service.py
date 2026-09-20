@@ -212,6 +212,7 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
                 event_type=payload.get("event_type", "application_action"),
                 details=details,
                 authorization_context=authorization_context,
+                approval_provider=self.server.approval_provider,
             )
         except AuditLogError:
             self._send_json(503, {"error": "audit_unavailable"})
@@ -340,7 +341,7 @@ class SecurityBrightnessHandler(BaseHTTPRequestHandler):
         return
 
 
-def create_server(host=HOST, port=PORT, token=None, registry=None):
+def create_server(host=HOST, port=PORT, token=None, registry=None, *, approval_provider=None):
     if host not in {"127.0.0.1", "localhost", "::1"}:
         raise ValueError("SecurityBrightness service must bind to a loopback address")
     if token is None:
@@ -349,6 +350,7 @@ def create_server(host=HOST, port=PORT, token=None, registry=None):
         raise ValueError("service token must be nonempty printable ASCII without spaces")
     server = HTTPServer((host, port), SecurityBrightnessHandler)
     server.securitybrightness_token = token
+    server.approval_provider = approval_provider
     server.request_read_timeout = REQUEST_TIMEOUT_SECONDS
     server.application_registry = registry or ApplicationRegistry()
     return server

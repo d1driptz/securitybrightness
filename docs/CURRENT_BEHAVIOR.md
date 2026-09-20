@@ -71,7 +71,7 @@ print(result.allowed, result.reason, result.request_id)
 
 The service and SDK share a discoverable catalog in `core.actions`: `describe_action(name)` and `list_actions()`. It preserves existing action scopes and approval requirements. Effective risk (`low`, `elevated`, `high`, `prohibited`) reflects the actual human-control classification, not a permission grant or an independent harm score. The API and audit records now include the additive fields `action_category`, `risk_level`, and `review_reason`.
 
-See [Application and AI integration](application-integration.md) for provisioning, human approval, timeout handling, tool-adapter boundaries, and the authorization-only `python -m examples.authorize` example. Legacy APIs remain available. A separate distributable SDK package and asynchronous human-review workflow are not implemented yet.
+See [Application and AI integration](application-integration.md) for provisioning, human approval, timeout handling, tool-adapter boundaries, and the authorization-only `python -m examples.authorize` example. Legacy APIs remain available. A separate distributable SDK package and application-facing asynchronous human-review workflow are not implemented yet.
 
 ## Local service
 
@@ -122,7 +122,7 @@ The application registry is not persistent and does not yet use the operating sy
 Known remaining weaknesses requiring further batches:
 
 - The trusted Python API still accepts legacy identity fields in event details; it must never be exposed directly to untrusted callers. `AuthorizationContext` is a trusted internal object, not a proof of authentication.
-- The service remains single-threaded. The read deadline bounds one slow request, but repeated connections, queued connections, and pending terminal approval can still delay others. There is no rate limiting or independent approval UI. Extremely large/rejected uploads may still end in a connection reset.
+- The service remains single-threaded. The read deadline bounds one slow request, but repeated connections, queued connections, and pending terminal approval can still delay others. There is no rate limiting; the optional desktop review still blocks the single HTTP worker. Extremely large/rejected uploads may still end in a connection reset.
 - Approval providers are trusted in-process code. Accepting `strong=True` cannot prove that a provider actually obtained human confirmation; the service does not sandbox providers or bind an approval cryptographically to later execution.
 - Audit logs are not tamper-proof, have no rotation/size cap, and rewrite the entire history on each event. The lock does not coordinate multiple processes; use a single writer. Atomic replacement and file synchronization do not guarantee directory durability across every power-loss scenario. Free-text secrets can leak, and lifecycle changes are not audited.
 - Policies infer sensitivity from action/target labels, scopes are not resource-specific, and authorization is not bound to a later execution. Registry locking does not make an entire authorization/approval flow atomic with revocation.
@@ -135,3 +135,7 @@ Run the complete automated suite from the repository root:
 ```bash
 python -m unittest discover -s core -p "test_*.py" -v
 ```
+
+## Optional desktop operator review
+
+`python -m core.desktop` starts the existing loopback service with a Tk desktop reviewer instead of terminal prompts. [Desktop guide](desktop-review.md) documents the accepted local-operator trust model, setup and behavior. Existing /check and SDK result contracts remain unchanged. A credential-free immutable ReviewRequest crosses the in-process OperatorReviewChannel; no application/admin HTTP endpoint can submit a human answer. The review channel enforces strong confirmation, one response per pending ID, a 120-second expiry, and a default capacity of 16 (the current single service worker presents at most one at a time). Capacity, closed-channel and timeout failures raise ApprovalProviderError/HTTP 503, never fall back to another provider and do not create a final decision audit record. Successful human decisions still require audit persistence before the service returns authorization. There is no execution, durable queue, human login or same-user process isolation.

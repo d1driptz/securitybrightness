@@ -1,6 +1,6 @@
 # Proposal lifecycle and human authority
 
-Status: PROPOSED; no approval endpoint, schema, identity mechanism or workflow described here is implemented by this document. The product owner's threat-model choice below is pending.
+Status: A ACCEPTED by the product owner; B is a required hardening milestone before claiming strong local enforcement against hostile same-user applications. The lifecycle and versioned schema below remain design direction, not existing application API features.
 
 ## Context and implemented baseline
 
@@ -31,25 +31,29 @@ This is a behavioral design, not a wire-schema commitment. Exact field types, no
 
 Persistent authority, retention and restart behavior need their own design before implementing durable grants. A first asynchronous workflow could remain explicitly ephemeral, but must clearly report expiry/loss rather than silently restoring authority.
 
-## Product-owner decision required: first graphical approval threat model
+## Accepted decision: A first, with migration to B
 
-### A. Trusted local operator environment first (recommended scope)
+### A. Trusted local operator environment first (accepted)
 
-Treat the local operator's OS session and the trusted review component as trusted, as the terminal deployment does today. Build a separately authenticated review channel for that operator; isolate its authority from application credentials and protect against hostile API clients, browser-origin attacks if applicable, replay and proposal substitution. Keep access local. Select the concrete reviewer bootstrap/session mechanism in a subsequent design; do not expose approval routes before it is defined.
+Treat the local operator's OS session and the trusted review component as trusted, as the terminal deployment does today. Build a separately authorized review channel for that operator; isolate its authority from application credentials and protect against hostile API clients, browser-origin attacks if applicable, replay and proposal substitution. Keep access local. Select the concrete reviewer bootstrap/session mechanism in a subsequent design; do not expose approval routes before it is defined.
 
 This enables a smaller first user-facing application without promising protection from arbitrary malicious processes with the operator's OS privileges. A stolen reviewer credential, code injection into the trusted reviewer, or OS-session compromise can defeat this model. The UI must state that limit. This choice does not authorize weaker scopes, automatic AI approval, remote access or arbitrary execution.
 
-### B. Same-account hostile applications in scope from the first graphical approval release
+### B. Hostile same-account applications (required future hardening milestone)
 
 Require a meaningful boundary even when a requesting application has the same OS account privileges as the human-facing component. A second bearer token alone cannot establish that boundary. First design and validate stronger process/credential isolation and a trustworthy human-presence channel on the selected platform. The UI/approval release must wait for evidence that requesting applications cannot impersonate or tamper with the approver.
 
 This is substantially broader security work and could require platform-specific architecture. It does not authorize deep OS integration or any executor by itself; those still require explicit designs. Do not claim this guarantee based on loopback binding, an approval button, browser origin checks, or a separate secret alone.
 
-## Recommendation and decision gate
+## Prototype boundary and migration to B
 
-Choose A for the first graphical approval release while keeping B as an explicit future assurance target, unless protection from malicious same-account applications is required for the first usable product. Both choices preserve application intent != human permission at the supported boundary; they differ in which attacker can compromise the trusted approval channel.
+The owner selected A and requires an explicit migration path to B. The first graphical reviewer runs as a trusted desktop component in the local operator's session. The service passes a credential-free immutable review message across an approval-provider boundary; the reviewer returns only a decision bound to that pending review. Application HTTP requests, application credentials and administrative tokens have no operation for submitting human decisions. Launching the local reviewer is the operator bootstrap; this prototype does not invent a second bearer token as proof of human presence.
 
-The owner must choose this scope before implementation of a new human approval channel. This follows the architecture's requirement for product-owner input on material changes to human authority. No option is selected by publishing this proposal. Ordinary improvements within the existing trusted terminal and application API remain authorized.
+Implement the first transport in process, with bounded pending reviews and expiry, while retaining the current synchronous application /check API. Keep GUI dependencies out of the policy and permission engine. Do not expose an HTTP approval endpoint or change application response schemas just to support the GUI. Reviewer failure must never fall back to automatic approval or a hidden terminal prompt.
+
+For B, replace the in-process review transport with an authenticated, isolated Windows component. Preserve the core provider contract and application-facing API. The isolated transport must authenticate both peers, bind decisions to immutable request content and a fresh review identifier, resist replay/substitution, and fail closed on disconnect. Review messages carry display facts, not application credentials, admin tokens, grants or caller-supplied authorization context. Exact IPC, OS identity, secret custody and human-presence mechanisms require a separate threat model and evidence before implementation.
+
+B is a release/claims gate: SecurityBrightness must not claim strong local enforcement against hostile same-user applications until that isolation and human-authority boundary is implemented and tested. A does not protect against same-user process injection, tampering or impersonation. This migration must not add executors or broaden authority; any execution/capability boundary remains a separate architectural decision.
 
 ## Required acceptance evidence after a decision
 

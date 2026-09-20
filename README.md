@@ -4,7 +4,7 @@
 
 SecurityBrightness is building a human-controlled authorization layer for increasingly autonomous applications and AI agents. The aim is useful autonomy with meaningful human authority over consequential actions, not automation restricted for its own sake.
 
-Today it is an **authorization-only Python core, local HTTP service, and application SDK**. It checks proposed actions against policy and application scopes, requests terminal approval or strong confirmation when required, and records decisions. It does not execute actions or control arbitrary third-party applications.
+Today it is an **authorization-only Python core, local HTTP service, and application SDK**. It checks proposed actions against policy and application scopes, requests terminal or desktop approval or strong confirmation when required, and records decisions. It does not execute actions or control arbitrary third-party applications.
 
 ## Start here
 
@@ -35,9 +35,11 @@ print(result.allowed, result.reason, result.request_id)
 
 This proposes a read and reports its decision; it does not read the file. Inspecting bills must not automatically grant permission to transfer money. The existing action catalog distinguishes those operations, but resource-specific financial limits and actual banking integrations are not implemented.
 
+For graphical human review, run `python -m core.desktop` instead of the terminal service. See the [desktop guide](docs/desktop-review.md) for setup, limitations, and the required migration toward stronger Windows isolation.
+
 ## Boundaries
 
-The registry is in memory, review is synchronous terminal input, and audit history is not tamper-proof. The direct Python API is for trusted in-process callers. There is no integrated authorization UI, expiring/resource-specific grant system, OS interception, or execution broker yet.
+The registry is in memory, review is synchronous terminal or optional desktop input, and audit history is not tamper-proof. The direct Python API is for trusted in-process callers. A minimal desktop review window is available; application/permission management, expiring/resource-specific grants, OS interception, and execution brokers are not implemented.
 
 An application must integrate with an enforcement point SecurityBrightness controls for actions at that point to be governed. Merely installing this project does not stop another application from bypassing a decision. Deeper OS integration is a longer-term possibility, not an existing feature. Any future execution layer requires a separate decision and isolation; arbitrary AI intent must never become unrestricted shell/OS execution.
 

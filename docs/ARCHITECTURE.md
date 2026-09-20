@@ -15,6 +15,7 @@ The initial inventory below was reviewed against commit `e1144ba42ec1642e96c8d88
 | In-memory registered applications, hashed random credentials, scope/trust changes, rotation and revocation | [registry.py](../core/registry.py) | [test_registry.py](../core/test_registry.py), [test_registry_security.py](../core/test_registry_security.py). Immutable snapshots and process-local locking; no durable grant store, automatic expiry or resource constraints. |
 | Server-derived application identity and internal authorization context | [service.py](../core/service.py), [authorization.py](../core/authorization.py), [identity.py](../core/identity.py) | [test_service.py](../core/test_service.py), [test_authorization.py](../core/test_authorization.py), [test_identity.py](../core/test_identity.py). HTTP rejects caller-authored identity fields; direct Python APIs still trust in-process callers. |
 | Policy denial, missing-scope denial before prompting, approval and strong confirmation | [permissions.py](../core/permissions.py), [approval.py](../core/approval.py) | [test_permissions.py](../core/test_permissions.py), [test_approval.py](../core/test_approval.py), [test_approval_security.py](../core/test_approval_security.py). Terminal review shows proposal context, the permission engine's policy/review explanations, and an unverified requester explanation in both approval modes. Review is synchronous; providers are trusted code, not verified human identity. |
+| Optional trusted-operator desktop review | [desktop.py](../core/desktop.py), [review_channel.py](../core/review_channel.py) | [test_review_channel.py](../core/test_review_channel.py), [test_desktop.py](../core/test_desktop.py), [test_sdk.py](../core/test_sdk.py). Credential-free immutable messages, bounded ephemeral channel, strong confirmation and fail-closed expiry/closure. Trusted local OS session only; no HTTP approval route or isolated Windows broker. |
 | Loopback HTTP checks and admin-protected lifecycle endpoints | [service.py](../core/service.py), [json_input.py](../core/json_input.py) | [test_http_security.py](../core/test_http_security.py), [test_service.py](../core/test_service.py). Strict JSON/framing and bounded request reads; still a single-threaded service. |
 | Decision audit with redaction, synchronized temporary writes and fail-closed persistence | [logger.py](../core/logger.py), [security.py](../core/security.py) | [test_logger.py](../core/test_logger.py), [test_audit_security.py](../core/test_audit_security.py). Not tamper-proof, not cross-process coordinated, not a full lifecycle audit. |
 | Registered-application SDK, prepared proposal snapshots, explicit decisions and authorization-only example | [sdk.py](../core/sdk.py), [proposal.py](../core/proposal.py), [api.py](../core/api.py), [example](../examples/authorize.py) | [test_sdk.py](../core/test_sdk.py), [test_proposal.py](../core/test_proposal.py), [test_api.py](../core/test_api.py). No executor, automatic retry, remote endpoint support, signed capability or separately published SDK package. |
@@ -27,7 +28,7 @@ Application / AI adapter proposes an action and target
     -> service verifies registry credential and derives identity/scopes
     -> internal AuthorizationContext + caller's ordinary details
     -> policy and Human Control classification
-    -> policy denial / scope denial / trusted terminal approval as applicable
+    -> policy denial / scope denial / trusted terminal/desktop approval as applicable
     -> final decision
     -> successful audit persistence
     -> structured response to application
@@ -46,7 +47,7 @@ The registered SDK sends an application credential, not administrative authority
 | Verified application credential | Possession of the registered application's bearer secret and its current registry snapshot | OS process identity, code integrity, human identity, or permission outside granted scopes |
 | Service/admin token | Privileged local lifecycle administration and legacy checks | A separate authenticated human session or an auditable human consent record |
 | Internal AuthorizationContext | Context supplied by trusted integration code; constructed by HTTP after credential verification | A cryptographic credential or protection from hostile code in the same Python process |
-| Approval provider / service terminal | Trusted in-process approval channel with a boolean contract; strong requests require provider support | Proof that an arbitrary custom provider actually obtained informed human consent |
+| Approval provider / service terminal or desktop | Trusted in-process approval channel with a boolean contract; strong requests require provider support | Proof that an arbitrary custom provider actually obtained informed human consent |
 | Audit file | Locally persisted decision history with some corruption/failure handling | Tamper resistance, comprehensive secret detection, multi-process safety or complete administrative history |
 | SDK result | A validated decision response from the configured local service | An unforgeable capability, permission for a different action, or evidence that an operation ran |
 
@@ -89,7 +90,7 @@ Storage should protect credentials and policy integrity, support migrations/reco
 
 Retain a proportionate spectrum: automatic decisions within legitimate delegated authority, useful notifications, explicit approval, strong confirmation, and policy denial. A review should identify the requesting application, proposed effects, applicable limits, why review is needed, and what approval would permit. Display requester-authored explanations as untrusted context. Never silently expand permission to avoid repeated prompts.
 
-The planned SecurityBrightness application should expose connected applications, current authority, pending reviews, explanations, decisions and revocation controls. A future asynchronous workflow needs explicit pending/approved/denied/cancelled/expired states, ownership, duplicate-request handling and disconnect recovery. None of those states or endpoints exist now. Establish separate authenticated human authority and protect approval against caller impersonation before adding an approval API. A client timeout must not count as consent or trigger automatic resubmission.
+The minimal desktop reviewer implements proposal review only. The planned full SecurityBrightness application should expose connected applications, current authority, pending reviews, explanations, decisions and revocation controls. A future asynchronous workflow needs explicit pending/approved/denied/cancelled/expired states, ownership, duplicate-request handling and disconnect recovery. There are no application-facing endpoints for those states now; the optional desktop channel has only ephemeral pending/answer/expiry handling inside the trusted process. Establish separate authenticated human authority and protect approval against caller impersonation before adding an approval API. A client timeout must not count as consent or trigger automatic resubmission.
 
 ### SDK/API and enforceable integrations
 
@@ -125,6 +126,6 @@ These are dependency-based priorities, not dates or claims of implementation. Ev
 
 Every substantial batch should identify the capability advanced, preserve compatible behavior unless security requires a documented change, test meaningful regressions and workflows, run the complete suite, review the diff, update implementation/evidence documentation, and verify the published branch. See [current service behavior](CURRENT_BEHAVIOR.md) for current limitations rather than interpreting the plan as a security guarantee.
 
-## Pending architecture decisions
+## Architecture decisions
 
-[Proposal lifecycle and human authority](decisions/0001-proposals-and-human-authority.md) describes the next workflow and a pending product-owner choice about the first graphical approval threat model. It is a proposal, not an implemented contract or an approved change to authority.
+[Proposal lifecycle and human authority](decisions/0001-proposals-and-human-authority.md) records the accepted A prototype threat model and required migration milestone B. Trust the local operator environment for the first desktop reviewer; do not claim protection against hostile same-user processes. The versioned/asynchronous application contract remains future design.
