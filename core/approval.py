@@ -12,6 +12,12 @@ def _display(value):
 class TerminalApprovalProvider:
     """Request explicit human approval through the terminal."""
 
+    def __init__(self, *, policy_rule="", policy_reason="", review_reason=""):
+        # The permission engine supplies its actual assessment, not caller details.
+        self.policy_rule = policy_rule
+        self.policy_reason = policy_reason
+        self.review_reason = review_reason
+
     def request_approval(self, event: SecurityEvent, strong: bool = False) -> bool:
         descriptor = describe_action(event.action)
         heading = "STRONG CONFIRMATION" if strong else "APPROVAL"
@@ -22,6 +28,12 @@ class TerminalApprovalProvider:
         print(f"Target: {_display(event.target)}")
         print(f"Action category: {_display(descriptor.category)}")
         print(f"Required scope (not a grant): {_display(descriptor.required_scope)}")
+        if self.policy_rule:
+            print(f"Policy rule: {_display(self.policy_rule)}")
+        if self.policy_reason:
+            print(f"Policy assessment: {_display(self.policy_reason)}")
+        if self.review_reason:
+            print(f"Why human review is required: {_display(self.review_reason)}")
         purpose = event.details.get("purpose") or event.details.get("reason")
         if purpose:
             print(f"Requester explanation (unverified): {_display(purpose)}")

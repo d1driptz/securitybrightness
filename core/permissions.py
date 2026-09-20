@@ -78,7 +78,11 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
         )
         decision_source = "scope"
     elif needs_approval:
-        provider = TerminalApprovalProvider() if approval_provider is None else approval_provider
+        provider = (TerminalApprovalProvider(
+            policy_rule=policy_result.rule,
+            policy_reason=policy_result.reason,
+            review_reason=control.reason,
+        ) if approval_provider is None else approval_provider)
         strong = control.level == HumanControlLevel.STRONG_CONFIRM
         approved = _ask_provider(provider, event, strong)
         decision_source = "user"

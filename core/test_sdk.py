@@ -1,8 +1,10 @@
+import io
 import json
 import socket
 import tempfile
 import threading
 import unittest
+from contextlib import redirect_stdout
 from dataclasses import asdict
 from email.message import Message
 from pathlib import Path
@@ -94,6 +96,37 @@ class SDKIntegrationTests(unittest.TestCase):
             allowed = self.client.check("send_message", "recipient")
         self.assertTrue(allowed.allowed)
         self.assertEqual((allowed.human_control, allowed.risk_level), ("strong_confirm", "high"))
+
+    def test_actual_terminal_review_explains_sensitive_read_before_consent(self):
+        output = io.StringIO()
+        def respond(prompt):
+            display = output.getvalue()
+            self.assertIn('Policy rule: "sensitive_target"', display)
+            self.assertIn("target appears sensitive", display)
+            self.assertIn("Why human review is required:", display)
+            self.assertIn('Source: "app"', display)
+            self.assertNotIn("FAKE_POLICY", display)
+            return "no"
+        with redirect_stdout(output), patch("builtins.input", side_effect=respond) as prompt:
+            result = self.client.check("read", ".env", details={"policy_reason": "FAKE_POLICY"})
+        prompt.assert_called_once()
+        self.assertFalse(result.allowed)
+        self.assertEqual(result.decision_source, "user")
+        self.assertIn(result.request_id, output.getvalue())
+        self.assertIn(result.review_reason, output.getvalue())
+        record = json.loads(self.log.read_text())[0]
+        self.assertEqual(record["decision"], "deny")
+        self.assertEqual(record["policy_rule"], result.policy_rule)
+
+    def test_actual_terminal_strong_review_still_requires_allow(self):
+        for answer, allowed in (("yes", False), ("ALLOW", True)):
+            output = io.StringIO()
+            with self.subTest(answer=answer), redirect_stdout(output), patch("builtins.input", return_value=answer):
+                result = self.client.check_proposal(ActionProposal("send_message", "recipient"))
+            self.assertEqual(result.allowed, allowed)
+            self.assertIn("STRONG CONFIRMATION", output.getvalue())
+            self.assertIn(result.review_reason, output.getvalue())
+            self.assertIn(result.request_id, output.getvalue())
 
     def test_rotated_and_revoked_credentials_fail_authentication(self):
         fresh = self.registry.rotate_credential("app")
