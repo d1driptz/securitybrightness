@@ -13,6 +13,8 @@ Today it is an **authorization-only Python core, local HTTP service, and applica
 - [Application and AI integration](docs/application-integration.md): provisioning, SDK usage, human review, and a runnable example.
 - [Current behavior and service reference](docs/CURRENT_BEHAVIOR.md): HTTP contract, compatibility notes, and known limitations.
 
+- [Development batches](docs/DEVELOPMENT_LOG.md): reviewed changes, full-suite results, and remaining limits.
+
 ## Run the local service
 
 From the repository root:

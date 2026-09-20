@@ -49,6 +49,23 @@ else:
 
 `ApplicationClient` uses only `127.0.0.1`, disables environment proxies and redirects, validates responses, and never retries checks automatically. Set `port` for a non-default local service port. IDs/credentials must be printable ASCII without spaces. Ordinary request details are JSON data; identity, trust, and granted scopes cannot be supplied there. The old `core.client.check` function remains available for compatibility; new application integrations should use the registered SDK.
 
+## Prepare and inspect a proposal
+
+`ActionProposal` snapshots the existing action/target/details contract before sending anything:
+
+```python
+from core.proposal import ActionProposal
+
+proposal = ActionProposal("read", "bills", details={"purpose": "summarize due dates"})
+preview = proposal.to_payload()  # independent copy; does not grant permission
+result = client.check_proposal(proposal)
+print(result.allowed, result.request_id)
+```
+
+Nested changes to the original details or the preview do not change the prepared request. Construction validates the same JSON, size, text and reserved-authority constraints as `client.check`, which now delegates to this path. Existing `client.check(action, target, details=...)` calls retain their wire format and behavior. A proposal has no credential, approval, server request ID or executor. Each explicit submission is a fresh check against current credentials and scopes; there is no permission cache, automatic retry or idempotency guarantee. A timeout still requires reconciliation before resubmission.
+
+This is a local SDK snapshot, not the planned versioned structured-effects protocol, a signed capability, or a guarantee that the application later performs the reviewed operation. Python code within the same process remains trusted. Do not place secrets in free-text explanations or print sensitive proposal contents indiscriminately.
+
 ## Human-control workflow
 
 1. The adapter maps the proposed operation to an action and target, then calls `client.check`.

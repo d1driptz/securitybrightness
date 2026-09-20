@@ -67,6 +67,8 @@ result = client.check("read", "notes.txt", details={"purpose": "summarize notes"
 print(result.allowed, result.reason, result.request_id)
 ```
 
+`core.proposal.ActionProposal` provides a validated immutable JSON snapshot for the existing action/target/details request. `ApplicationClient.check_proposal` submits it; `to_payload()` returns an independent inspection copy. This does not add server state, permission caching, a new wire schema, or downstream operation binding.
+
 The service and SDK share a discoverable catalog in `core.actions`: `describe_action(name)` and `list_actions()`. It preserves existing action scopes and approval requirements. Effective risk (`low`, `elevated`, `high`, `prohibited`) reflects the actual human-control classification, not a permission grant or an independent harm score. The API and audit records now include the additive fields `action_category`, `risk_level`, and `review_reason`.
 
 See [Application and AI integration](application-integration.md) for provisioning, human approval, timeout handling, tool-adapter boundaries, and the authorization-only `python -m examples.authorize` example. Legacy APIs remain available. A separate distributable SDK package and asynchronous human-review workflow are not implemented yet.

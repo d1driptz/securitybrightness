@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 
+from core.proposal import ActionProposal
 from core.registry import ApplicationRegistry
 from core.sdk import ActionDenied, ApplicationClient, AuthorizationResult, SDKError, MAX_MESSAGE_BYTES
 from core.service import create_server
@@ -48,6 +49,31 @@ class SDKIntegrationTests(unittest.TestCase):
         self.assertEqual(result.action_category, "files")
         self.assertEqual(result.risk_level, "low")
         self.assertEqual(record["source"], "app")
+
+    def test_prepared_proposal_preserves_snapshot_through_service_and_audit(self):
+        details = {"purpose": "summarize", "context": {"items": ["bill-A"]}}
+        proposal = ActionProposal("read", "bills", details=details)
+        details["context"]["items"].append("bill-B")
+        proposal.to_payload()["details"]["context"]["items"].clear()
+        result = self.client.check_proposal(proposal)
+        self.assertTrue(result.allowed)
+        record = json.loads(self.log.read_text())[0]
+        self.assertEqual(record["details"]["context"], {"items": ["bill-A"]})
+        self.assertEqual(record["request_id"], result.request_id)
+        with patch.object(self.client._opener, "open") as network:
+            with self.assertRaises(TypeError):
+                self.client.check_proposal({"action": "read", "target": "bills"})
+            network.assert_not_called()
+
+    def test_reusing_proposal_reauthenticates_and_does_not_cache_permission(self):
+        proposal = ActionProposal("read", "bills")
+        self.assertTrue(self.client.check_proposal(proposal).allowed)
+        self.registry.set_scopes("app", [])
+        self.assertFalse(self.client.check_proposal(proposal).allowed)
+        self.registry.revoke("app")
+        with self.assertRaises(SDKError) as caught:
+            self.client.check_proposal(proposal)
+        self.assertEqual(caught.exception.status, 401)
 
     def test_scope_denial_is_distinct_from_transport_error(self):
         with patch("core.permissions.TerminalApprovalProvider") as provider:

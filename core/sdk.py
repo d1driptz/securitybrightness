@@ -1,17 +1,14 @@
 """Registered-application SDK. Proposals and decisions only; no execution hooks."""
-import json
 import math
 from dataclasses import dataclass, fields
 from http.client import HTTPException
 from urllib import error, request
 
 from .actions import CONTROL_RISKS, describe_action
-from .events import SecurityEvent
+from .proposal import ActionProposal, MAX_MESSAGE_BYTES
 from .json_input import loads as strict_json_loads
 from .validation import application_id as validate_application_id
 
-MAX_MESSAGE_BYTES = 64 * 1024
-_RESERVED = {"application_id", "authenticated", "trust", "granted_scopes"}
 
 
 class SDKError(RuntimeError):
@@ -118,19 +115,13 @@ class ApplicationClient:
         self._opener = request.build_opener(request.ProxyHandler({}), _NoRedirect())
 
     def check(self, action, target, *, details=None):
-        event = SecurityEvent.create("application_action", self.application_id, action, target, details)
-        if not event.action or not event.target:
-            raise ValueError("action and target must be nonempty")
-        if _RESERVED.intersection(event.details):
-            raise ValueError("identity and scopes are owned by the service")
-        payload = {"action": event.action, "target": event.target, "details": event.details}
-        try:
-            body = json.dumps(payload, allow_nan=False, ensure_ascii=True).encode("utf-8")
-            strict_json_loads(body.decode("utf-8"))
-        except (TypeError, ValueError, RecursionError):
-            raise ValueError("details must contain finite UTF-8 JSON values within the nesting limit") from None
-        if len(body) > MAX_MESSAGE_BYTES:
-            raise ValueError("request is too large")
+        return self.check_proposal(ActionProposal(action, target, details=details))
+
+    def check_proposal(self, proposal):
+        """Submit one prepared snapshot; never cache, retry, or execute it."""
+        if not isinstance(proposal, ActionProposal):
+            raise TypeError("proposal must be an ActionProposal")
+        body = proposal._body
         req = request.Request(self._url, data=body, method="POST", headers={
             "Authorization": "Bearer " + self._credential,
             "X-SecurityBrightness-App": self.application_id,
@@ -147,7 +138,7 @@ class ApplicationClient:
                     payload = strict_json_loads(raw.decode("utf-8"))
                 except (UnicodeError, ValueError):
                     raise SDKError("invalid_response") from None
-                return AuthorizationResult._from_payload(payload, self.application_id, event.action)
+                return AuthorizationResult._from_payload(payload, self.application_id, proposal.action)
         except error.HTTPError as exc:
             status = exc.code
             exc.close()
