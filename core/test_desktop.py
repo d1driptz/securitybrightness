@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from core.events import SecurityEvent
 from core.permissions import ApprovalProviderError
 from core.review_channel import OperatorReviewChannel
+from core.registry import ApplicationRegistry
 
 
 class DesktopTests(unittest.TestCase):
@@ -21,8 +22,23 @@ class DesktopTests(unittest.TestCase):
         root.withdraw()
         channel = OperatorReviewChannel(timeout=5)
         pool = ThreadPoolExecutor(max_workers=1)
-        window = ReviewWindow(root, channel)
+        registry = ApplicationRegistry()
+        credential = registry.register("app", ["communications.send"])
+        window = ReviewWindow(root, channel, application_reader=registry.list_applications)
         try:
+            rows = window.application_table.get_children()
+            self.assertEqual(len(rows), 1)
+            values = window.application_table.item(rows[0], "values")
+            self.assertIn("communications.send", str(values))
+            window.application_table.selection_set(rows[0])
+            window.show_application()
+            self.assertIn("communications.send", window.application_details.get("1.0", "end"))
+            self.assertNotIn(credential, str(values))
+            self.assertNotIn(registry.get("app").credential_hash, str(values))
+            registry.revoke("app")
+            window.refresh_applications()
+            self.assertEqual(window.application_table.get_children(), ())
+            window.tabs.select(1)
             event = SecurityEvent.create("test", "app", "send_message", "recipient\nFAKE",
                                          {"purpose": "hello\u202e"})
             future = pool.submit(channel.request_approval, event, strong=True)
@@ -32,6 +48,7 @@ class DesktopTests(unittest.TestCase):
             window.poll()
             root.update_idletasks()
             self.assertIsNotNone(window.current)
+            self.assertEqual(window.tabs.select(), str(window.review_frame))
             contents = window.text.get("1.0", "end")
             self.assertIn(r"recipient\nFAKE", contents)
             self.assertIn(r"hello\u202e", contents)

@@ -175,3 +175,27 @@ class RegistryHttpSecurityTests(unittest.TestCase):
             self.assertEqual(status, 401)
         self.assertIsNotNone(self.registry.authenticate("app", self.credential))
         self.assertEqual(self.registry.get("app").scopes, {"files.read"})
+
+
+class OperatorSummaryTests(unittest.TestCase):
+    def test_summaries_are_immutable_credential_free_snapshots(self):
+        from dataclasses import asdict, FrozenInstanceError
+        from core.registry import ApplicationRegistry
+        registry = ApplicationRegistry()
+        credential = registry.register("app", ["files.read"])
+        snapshot = registry.list_applications()
+        self.assertEqual(len(snapshot), 1)
+        self.assertEqual(set(asdict(snapshot[0])), {"application_id", "scopes", "trusted"})
+        self.assertNotIn(credential, repr(snapshot))
+        self.assertNotIn(registry.get("app").credential_hash, repr(snapshot))
+        with self.assertRaises(FrozenInstanceError):
+            snapshot[0].trusted = True
+        registry.update_permissions("app", scopes=["files.write"], trusted=True)
+        self.assertEqual(snapshot[0].scopes, frozenset({"files.read"}))
+        fresh = registry.list_applications()[0]
+        self.assertTrue(fresh.trusted)
+        self.assertEqual(fresh.scopes, frozenset({"files.write"}))
+        registry.rotate_credential("app")
+        self.assertEqual(registry.list_applications()[0], fresh)
+        registry.revoke("app")
+        self.assertEqual(registry.list_applications(), ())

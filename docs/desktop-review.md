@@ -1,6 +1,6 @@
 # Desktop human review (prototype A)
 
-Run `python -m core.desktop` from the repository root, instead of `python -m core.service`. Python must include Tkinter. The desktop owns the existing loopback service at 127.0.0.1:8765, so stop an already running instance first. The console prints a generated administrator token unless SECURITYBRIGHTNESS_TOKEN is configured. Keep it private. Provision applications through the existing [integration guide](application-integration.md); the desktop does not yet manage registrations or persistent permissions.
+Run `python -m core.desktop` from the repository root, instead of `python -m core.service`. Python must include Tkinter. The desktop owns the existing loopback service at 127.0.0.1:8765, so stop an already running instance first. The console prints a generated administrator token unless SECURITYBRIGHTNESS_TOKEN is configured. Keep it private. Provision applications through the existing [integration guide](application-integration.md); the desktop can display registrations and current scopes but does not yet create/change them or persist permissions.
 
 Application/AI intent does not equal human permission. This prototype trusts the local Windows operator environment. **It does not protect against malicious processes running under the same Windows account.** [Decision 0001](decisions/0001-proposals-and-human-authority.md) records A and makes B a required hardening milestone before strong local enforcement claims.
 
@@ -14,6 +14,12 @@ A reviewer has 120 seconds by default. Expiry, unavailable review capacity or cl
 
 The SDK's default 60-second socket timeout can occur before review expires. Timeout never means consent. An application that loses its response must not execute or automatically resubmit. Adjust the SDK timeout deliberately if a longer human wait is needed, and reconcile ambiguous outcomes through the service audit. The desktop shows a submitted human answer, not proof that audit persistence succeeded or that the application received it.
 
+## Inspect current application authority
+
+The Applications tab lists registered application IDs, trust settings and action scopes from the desktop-owned service. It refreshes about once per second. An arriving human-review request selects the Human review tab, without submitting an answer. Select a row to read its complete scope list. Values are escaped, and neither raw credentials nor credential hashes are sent to this view. The table is read-only; use the existing administrator endpoints for lifecycle changes. An empty scope list does not grant access. Trust does not bypass scope checks or strong confirmation.
+
+The registry supplies immutable credential-free ApplicationSummary snapshots under its existing lock. The UI receives only a read callback, not a credential-bearing registry object. A failed refresh marks the display as unavailable/stale; the displayed snapshot is never used for authorization. It does not show live OS processes, persistent grants, or the permissions of arbitrary third-party applications.
+
 ## Boundary and replacement path
 
 The trusted desktop main thread owns the review interface; the existing HTTP service runs on a worker. OperatorReviewChannel implements the existing approval-provider contract and carries immutable credential-free ReviewRequest messages. Each response names a fresh pending review ID; wrong, expired or already answered IDs cannot approve another request. Strong confirmation is checked in the channel as well as requested by the UI.
@@ -24,4 +30,4 @@ A future B implementation replaces this in-process transport with an authenticat
 
 ## Remaining limitations
 
-The service remains single-threaded: waiting for human review also delays other HTTP requests, including administration. Revocation is not atomic with an in-progress authorization. There is no application-facing polling/cancellation API, persistent review queue, notification delivery, application-management UI, authenticated human account model or isolated process boundary. Scope checks still use broad action scopes. Audit failures remain fail-closed, but audit history is not tamper-proof and failed review-channel attempts have no final decision record.
+The service remains single-threaded: waiting for human review also delays other HTTP requests, including administration. Revocation is not atomic with an in-progress authorization. There is no application-facing polling/cancellation API, persistent review queue, notification delivery, application-management controls, authenticated human account model or isolated process boundary. Scope checks still use broad action scopes. Audit failures remain fail-closed, but audit history is not tamper-proof and failed review-channel attempts have no final decision record.

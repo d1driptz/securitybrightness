@@ -16,6 +16,14 @@ class RegisteredApplication:
     trusted: bool = False
 
 
+@dataclass(frozen=True)
+class ApplicationSummary:
+    """Read-only operator view; deliberately excludes credential material."""
+    application_id: str
+    scopes: frozenset[str]
+    trusted: bool
+
+
 class ApplicationRegistry:
     def __init__(self):
         self._applications = {}
@@ -43,6 +51,11 @@ class ApplicationRegistry:
     def get(self, application_id: str):
         with self._lock:
             return self._applications.get(validate_application_id(application_id))
+
+    def list_applications(self) -> tuple[ApplicationSummary, ...]:
+        with self._lock:
+            return tuple(ApplicationSummary(app.application_id, app.scopes, app.trusted)
+                         for _, app in sorted(self._applications.items()))
 
     def update_permissions(self, application_id: str, **changes):
         """Validate all fields before replacing one immutable registry snapshot."""

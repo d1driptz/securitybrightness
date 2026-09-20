@@ -23,16 +23,45 @@ def display_review(review):
 
 
 class ReviewWindow:
-    def __init__(self, root, channel):
+    def __init__(self, root, channel, *, application_reader=None):
         self.root = root
         self.channel = channel
         self.current = None
+        self.application_reader = application_reader
+        self._poll_count = 0
+        self._application_snapshot = None
         self.closed = False
         root.title("SecurityBrightness - Human review")
         root.geometry("820x680")
         root.minsize(640, 520)
-        frame = ttk.Frame(root, padding=20)
-        frame.pack(fill="both", expand=True)
+        tabs = ttk.Notebook(root)
+        tabs.pack(fill="both", expand=True)
+        frame = ttk.Frame(tabs, padding=20)
+        tabs.add(frame, text="Human review")
+        self.tabs = tabs
+        self.review_frame = frame
+        applications = ttk.Frame(tabs, padding=20)
+        tabs.add(applications, text="Applications")
+        ttk.Label(applications, text="Registered applications", font=("Segoe UI", 16, "bold")).pack(anchor="w")
+        ttk.Label(applications, text="Read-only local registry. Registrations are lost when this service stops. Scopes are not resource-specific.",
+                  wraplength=730).pack(anchor="w", pady=(8, 14))
+        self.application_status = tk.StringVar(value="")
+        ttk.Label(applications, textvariable=self.application_status, wraplength=730).pack(anchor="w", pady=(0, 10))
+        self.application_table = ttk.Treeview(applications, columns=("application", "trust", "scopes"), show="headings")
+        for column, title, width in (("application", "Application", 180), ("trust", "Trust setting", 100),
+                                     ("scopes", "Granted action scopes", 440)):
+            self.application_table.heading(column, text=title)
+            self.application_table.column(column, width=width, minwidth=80)
+        self.application_table.pack(fill="both", expand=True)
+        horizontal = ttk.Scrollbar(applications, orient="horizontal", command=self.application_table.xview)
+        horizontal.pack(fill="x")
+        self.application_table.configure(xscrollcommand=horizontal.set)
+        ttk.Label(applications, text="Selected application's complete scopes:").pack(anchor="w", pady=(12, 4))
+        self.application_details = tk.Text(applications, height=5, wrap="word", state="disabled", font=("Segoe UI", 10))
+        self.application_details.pack(fill="x")
+        self.application_table.bind("<<TreeviewSelect>>", self.show_application)
+        ttk.Label(applications, text="No credentials or credential hashes are shown. Trust does not replace scope checks or human confirmation.",
+                  wraplength=730).pack(anchor="w", pady=(12, 0))
         ttk.Label(frame, text="Application intent is not human permission", font=("Segoe UI", 16, "bold")).pack(anchor="w")
         ttk.Label(frame, text="Local operator prototype. Does not protect against hostile processes under your Windows account.",
                   wraplength=730).pack(anchor="w", pady=(8, 14))
@@ -60,9 +89,40 @@ class ReviewWindow:
         root.protocol("WM_DELETE_WINDOW", self.close)
         self.poll()
 
+    def show_application(self, _event=None):
+        selected = self.application_table.selection()
+        self.application_details.configure(state="normal")
+        self.application_details.delete("1.0", "end")
+        if selected:
+            values = self.application_table.item(selected[0], "values")
+            self.application_details.insert("1.0", values[2])
+        self.application_details.configure(state="disabled")
+
+    def refresh_applications(self):
+        try:
+            snapshot = self.application_reader() if self.application_reader else ()
+        except Exception:
+            self.application_status.set("Registry view unavailable. Existing rows may be out of date.")
+            return
+        if snapshot != self._application_snapshot:
+            self._application_snapshot = snapshot
+            for item in self.application_table.get_children():
+                self.application_table.delete(item)
+            self.show_application()
+            for app in snapshot:
+                self.application_table.insert("", "end", values=(
+                    json.dumps(app.application_id, ensure_ascii=True),
+                    "trusted" if app.trusted else "recognized",
+                    json.dumps(sorted(app.scopes), ensure_ascii=True),
+                ))
+        self.application_status.set(f"{len(snapshot)} registered application(s). Updated from this service's in-memory registry.")
+
     def poll(self):
         if self.closed:
             return
+        if self._poll_count % 10 == 0:
+            self.refresh_applications()
+        self._poll_count += 1
         reviews = self.channel.pending_reviews()
         review = reviews[0] if reviews else None
         if review != self.current:
@@ -72,6 +132,7 @@ class ReviewWindow:
             self.text.configure(state="normal")
             self.text.delete("1.0", "end")
             if review:
+                self.tabs.select(self.review_frame)
                 self.text.insert("1.0", display_review(review))
                 self.status.set("Strong confirmation required" if review.strong else "Your decision is required")
                 self.hint.set("Type ALLOW, then approve." if review.strong else "Choose Approve or Deny.")
@@ -129,7 +190,7 @@ def main():
         print(f"Session/admin token: {server.securitybrightness_token}")
     print("Keep the admin token private. Provision applications using the existing integration guide.")
     try:
-        ReviewWindow(root, channel)
+        ReviewWindow(root, channel, application_reader=server.application_registry.list_applications)
         root.mainloop()
     finally:
         channel.close()
