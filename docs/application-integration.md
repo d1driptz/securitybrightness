@@ -54,7 +54,7 @@ else:
 1. The adapter maps the proposed operation to an action and target, then calls `client.check`.
 2. The service authenticates the application and derives its identity/scopes. A missing scope denies immediately, without asking the human.
 3. Policy and Human Control classify the proposal. Ordinary reads may be automatic; sensitive reads and modifications require approval; communication/payment/account actions require strong confirmation.
-4. The service's trusted terminal requests any required approval. The application's response or an AI-produced `approved=true` value cannot answer it.
+4. The service's trusted terminal requests any required approval, showing the request ID, source, action/target, category, required scope, and any unverified requester explanation. The application's response or an AI-produced `approved=true` value cannot answer it.
 5. Only after a final decision and successful audit write does the SDK return a result. This is still authorization only.
 
 For example, with `communications.send` granted, `client.check("send_message", "recipient", details={"purpose":"reply to a question"})` waits for service-side strong confirmation. Without that scope it returns a denial without prompting. Do not build a caller-supplied approval endpoint around the SDK.

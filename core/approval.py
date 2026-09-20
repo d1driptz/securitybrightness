@@ -1,5 +1,6 @@
 import json
 
+from .actions import describe_action
 from .events import SecurityEvent
 
 
@@ -12,14 +13,21 @@ class TerminalApprovalProvider:
     """Request explicit human approval through the terminal."""
 
     def request_approval(self, event: SecurityEvent, strong: bool = False) -> bool:
+        descriptor = describe_action(event.action)
+        heading = "STRONG CONFIRMATION" if strong else "APPROVAL"
+        print(f"\nSecurityBrightness {heading}")
+        print(f"Request ID: {_display(event.request_id)}")
+        print(f"Source: {_display(event.source)}")
+        print(f"Action: {_display(event.action)}")
+        print(f"Target: {_display(event.target)}")
+        print(f"Action category: {_display(descriptor.category)}")
+        print(f"Required scope (not a grant): {_display(descriptor.required_scope)}")
+        purpose = event.details.get("purpose") or event.details.get("reason")
+        if purpose:
+            print(f"Requester explanation (unverified): {_display(purpose)}")
+        print("Review this proposal only. Approval does not grant ongoing authority.")
+        print("SecurityBrightness records authorization; it does not execute this action.")
         if strong:
-            print("\nSecurityBrightness STRONG CONFIRMATION")
-            print(f"Source: {_display(event.source)}")
-            print(f"Action: {_display(event.action)}")
-            print(f"Target: {_display(event.target)}")
-            purpose = event.details.get("purpose") or event.details.get("reason")
-            if purpose:
-                print(f"Purpose: {_display(purpose)}")
             answer = input("Type ALLOW to authorize this high-impact action: ").strip()
             return answer == "ALLOW"
 

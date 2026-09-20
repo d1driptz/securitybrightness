@@ -99,6 +99,8 @@ Actions map to explicit scopes such as `files.read`, `files.write`, `files.delet
 
 Human-control classifications are `automatic`, `notify`, `approval`, `strong_confirm`, and `blocked`. High-impact actions such as sending messages, publishing, sharing, purchases, payments, money transfers, and account changes require stronger human confirmation. The requesting application cannot approve its own request. Approval providers must return an actual boolean; truthy strings/numbers are errors. Providers handling strong confirmation must accept the `strong` keyword. Legacy one-argument providers remain supported for ordinary approval only. Invalid provider contracts raise `ApprovalProviderError` rather than grant permission; HTTP maps that error to 503. EOF from the approval channel denies the action, provider implementation exceptions are not retried, and terminal labels escape caller-controlled control characters.
 
+The terminal shows the request ID, source, action, target, action category, and required scope before both ordinary approval and strong confirmation. Purpose (or fallback reason) is labelled as an unverified requester explanation. It does not dump all request details. Review text explicitly limits approval to the proposal, without granting ongoing authority or executing it. Required scope is descriptive, not a grant; actual scope checks still occur before review. Ordinary approval accepts yes/no; strong confirmation requires `ALLOW`. This is a terminal presentation improvement, not a structured-effects schema or a new human identity mechanism.
+
 ## Policy baseline
 
 - ordinary read/open/view requests can be automatically allowed when authorization requirements are satisfied;
