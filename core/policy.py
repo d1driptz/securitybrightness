@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .events import SecurityEvent
+from .actions import ACTIONS
 
 
 class Decision(Enum):
@@ -17,12 +18,8 @@ class PolicyResult:
     rule: str
 
 
-SAFE_ACTIONS = {"read", "open", "view"}
-DENIED_ACTIONS = {
-    "delete_system_file",
-    "disable_security",
-    "bypass_permission",
-}
+SAFE_ACTIONS = {name for name, item in ACTIONS.items() if item.baseline_control == "automatic"}
+DENIED_ACTIONS = {name for name, item in ACTIONS.items() if item.baseline_control == "blocked"}
 SENSITIVE_MARKERS = {
     "password",
     "passwd",
@@ -35,15 +32,7 @@ SENSITIVE_MARKERS = {
     ".ssh",
     ".env",
 }
-DESTRUCTIVE_ACTIONS = {
-    "delete",
-    "remove",
-    "overwrite",
-    "modify",
-    "write",
-    "execute",
-    "run",
-}
+DESTRUCTIVE_ACTIONS = {name for name, item in ACTIONS.items() if item.baseline_control == "approval"}
 
 
 def evaluate(event: SecurityEvent) -> PolicyResult:

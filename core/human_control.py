@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .events import SecurityEvent
+from .actions import ACTIONS
 from .identity import TrustLevel, identify
 from .policy import Decision, PolicyResult
 
@@ -20,17 +21,7 @@ class HumanControlResult:
     reason: str
 
 
-HIGH_IMPACT_ACTIONS = {
-    "purchase",
-    "pay",
-    "transfer_money",
-    "send_message",
-    "post",
-    "publish",
-    "share",
-    "change_account",
-    "delete_account",
-}
+HIGH_IMPACT_ACTIONS = {name for name, item in ACTIONS.items() if item.baseline_control == "strong_confirm"}
 
 
 def classify(event: SecurityEvent, policy_result: PolicyResult) -> HumanControlResult:
@@ -69,10 +60,10 @@ def classify(event: SecurityEvent, policy_result: PolicyResult) -> HumanControlR
     if event.details.get("notify") is True:
         return HumanControlResult(
             HumanControlLevel.NOTIFY,
-            "The action is allowed but the human should be informed.",
+            "Human notification is required in addition to applicable authorization checks.",
         )
 
     return HumanControlResult(
         HumanControlLevel.AUTOMATIC,
-        "The action can proceed without additional human interaction.",
+        "No additional human interaction is required by this classification.",
     )

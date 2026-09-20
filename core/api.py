@@ -37,4 +37,7 @@ def check_action(
         "required_scope": result.required_scope,
         "scope_granted": result.scope_granted,
         "reason": result.reason,
+        "action_category": result.action_category,
+        "risk_level": result.risk_level,
+        "review_reason": result.review_reason,
     }

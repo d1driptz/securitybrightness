@@ -53,6 +53,22 @@ print(result)
 
 Responses include `request_id`, `timestamp`, `decision`, `decision_source`, `policy_rule`, `human_control`, `application_id`, `application_trust`, `authenticated`, `required_scope`, `scope_granted`, and `reason`.
 
+## Registered application SDK
+
+New application/AI integrations can use `core.sdk.ApplicationClient` with an application credential. It returns an immutable `AuthorizationResult` with explicit `allowed`/`require_allowed()` handling, request IDs, scope information, action category, effective risk level, and human-review explanation. The SDK never executes, approves, or automatically retries proposals; it uses the local service without redirects or environment proxies.
+
+```python
+from core.sdk import ApplicationClient
+
+client = ApplicationClient("notes-assistant", application_credential)
+result = client.check("read", "notes.txt", details={"purpose": "summarize notes"})
+print(result.allowed, result.reason, result.request_id)
+```
+
+The service and SDK share a discoverable catalog in `core.actions`: `describe_action(name)` and `list_actions()`. It preserves existing action scopes and approval requirements. Effective risk (`low`, `elevated`, `high`, `prohibited`) reflects the actual human-control classification, not a permission grant or an independent harm score. The API and audit records now include the additive fields `action_category`, `risk_level`, and `review_reason`.
+
+See [Application and AI integration](docs/application-integration.md) for provisioning, human approval, timeout handling, tool-adapter boundaries, and the authorization-only `python -m examples.authorize` example. Legacy APIs remain available. A separate distributable SDK package and asynchronous human-review workflow are not implemented yet.
+
 ## Local service
 
 Run from the repository root:

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import inspect
 
 from .approval import TerminalApprovalProvider
+from .actions import CONTROL_RISKS, describe_action
 from .events import SecurityEvent
 from .human_control import HumanControlLevel, classify
 from .identity import identify
@@ -21,6 +22,9 @@ class PermissionResult:
     authenticated: bool = False
     required_scope: str = ""
     scope_granted: bool = False
+    action_category: str = "unknown"
+    risk_level: str = "elevated"
+    review_reason: str = ""
 
 
 class ApprovalProviderError(RuntimeError):
@@ -97,4 +101,7 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
         authenticated=identity.authenticated,
         required_scope=scope_result.required_scope,
         scope_granted=scope_result.granted,
+        action_category=describe_action(event.action).category,
+        risk_level=CONTROL_RISKS[control.level.value],
+        review_reason=control.reason,
     )

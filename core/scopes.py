@@ -3,6 +3,7 @@ from typing import Iterable
 from collections.abc import Mapping
 
 from .events import SecurityEvent
+from .actions import ACTIONS, describe_action
 
 
 @dataclass
@@ -11,27 +12,7 @@ class ScopeResult:
     granted: bool
 
 
-ACTION_SCOPES = {
-    "read": "files.read",
-    "open": "files.read",
-    "view": "files.read",
-    "write": "files.write",
-    "modify": "files.write",
-    "overwrite": "files.write",
-    "delete": "files.delete",
-    "remove": "files.delete",
-    "execute": "process.execute",
-    "run": "process.execute",
-    "send_message": "communications.send",
-    "post": "communications.publish",
-    "publish": "communications.publish",
-    "share": "data.share",
-    "purchase": "payments.purchase",
-    "pay": "payments.pay",
-    "transfer_money": "payments.transfer",
-    "change_account": "account.change",
-    "delete_account": "account.delete",
-}
+ACTION_SCOPES = {name: item.required_scope for name, item in ACTIONS.items()}
 
 
 def normalize_scopes(scopes: Iterable[str] | None) -> set[str]:
@@ -51,8 +32,7 @@ def normalize_scopes(scopes: Iterable[str] | None) -> set[str]:
 
 
 def check_scope(event: SecurityEvent) -> ScopeResult:
-    action = (event.action or "").strip().lower()
-    required = ACTION_SCOPES.get(action, f"action.{action or 'unknown'}")
+    required = describe_action(event.action).required_scope
     granted_scopes = normalize_scopes(event.details.get("granted_scopes"))
 
     return ScopeResult(
