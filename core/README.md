@@ -8,6 +8,10 @@ Registry records are immutable snapshots. Use `register`, `rotate_credential`, `
 
 Application IDs must be nonempty strings, trust/authentication flags must be booleans, and scope collections must contain nonempty strings. String coercion and mapping-based scope grants are rejected. `AuthorizationContext` is for trusted code only. Legacy in-process event details can still contain authorization fields and are not an external authentication boundary.
 
+HTTP input now uses one strict decoder and a five-second absolute read deadline. Ambiguous headers/JSON, unsupported encodings, non-finite numbers, and deeply nested or invalid Unicode input fail before authorization or lifecycle mutations. Legacy identity fields remain rejected over HTTP.
+
+Approval providers must return booleans and support `strong=True` for high-impact review. Audit logging uses a process-local lock and unique synchronized temporary files; corrupt or unavailable audit history fails closed without overwriting it. HTTP returns 503 for audit persistence or approval contract errors. Key-based redaction covers common spelling variants, not free-text secrets.
+
 See the root README for the HTTP contract, compatibility changes, and remaining security limitations.
 
 Run from the repository root:

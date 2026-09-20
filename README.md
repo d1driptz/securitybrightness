@@ -63,7 +63,11 @@ python -m core.service
 
 The service binds to `127.0.0.1:8765` and refuses non-loopback binding. A service session token is generated unless `SECURITYBRIGHTNESS_TOKEN` is set.
 
-`GET /health` provides the minimal health endpoint. `POST /check` is authenticated, size-limited, JSON-only, and rejects unknown fields. `POST /register`, `/rotate`, `/revoke`, and `/permissions` require the service session/admin token. Application credentials cannot use these administrative endpoints.
+`GET /health` provides the minimal health endpoint. `POST /check` is authenticated, size-limited, JSON-only, and rejects unknown fields. All POST routes use the same strict UTF-8 JSON decoder: duplicate object keys (at any depth), non-finite numbers, invalid Unicode, and nesting beyond 32 levels are rejected before authorization or registry mutation. Requests require one decimal `Content-Length` of 1 to 65,536 bytes. Duplicate security/framing headers, folded or malformed headers, transfer/content encodings, and `Expect` are rejected. Only UTF-8 JSON is supported.
+
+A five-second absolute read deadline covers the request line, headers, and body, including trickled uploads. Expired or incomplete requests cannot reach authorization. Expiry may return HTTP 408 or close/reset the connection before a response is possible. Responses close the connection; early rejections use a size/time-bounded drain to improve delivery on Windows. The deadline ends when the full body is received, so it does not set a human-approval deadline.
+
+`POST /register`, `/rotate`, `/revoke`, and `/permissions` require the service session/admin token. Application credentials cannot use these administrative endpoints. Administrative requests must omit `X-SecurityBrightness-App`; even an empty application header selects application mode for `/check` and never falls back to the admin token. Configured session tokens must be nonempty printable ASCII without spaces; malformed/non-ASCII supplied credentials fail authentication.
 
 Registered applications authenticate with a Bearer credential plus the `X-SecurityBrightness-App` header. Their identity, trust, scopes, and request source are derived by the service rather than accepted from application JSON. Supplying an application ID with an invalid credential fails authentication instead of falling back to the service session token.
 
@@ -75,7 +79,7 @@ Actions map to explicit scopes such as `files.read`, `files.write`, `files.delet
 
 ## Human control
 
-Human-control classifications are `automatic`, `notify`, `approval`, `strong_confirm`, and `blocked`. High-impact actions such as sending messages, publishing, sharing, purchases, payments, money transfers, and account changes require stronger human confirmation. The requesting application cannot approve its own request.
+Human-control classifications are `automatic`, `notify`, `approval`, `strong_confirm`, and `blocked`. High-impact actions such as sending messages, publishing, sharing, purchases, payments, money transfers, and account changes require stronger human confirmation. The requesting application cannot approve its own request. Approval providers must return an actual boolean; truthy strings/numbers are errors. Providers handling strong confirmation must accept the `strong` keyword. Legacy one-argument providers remain supported for ordinary approval only. Invalid provider contracts raise `ApprovalProviderError` rather than grant permission; HTTP maps that error to 503. EOF from the approval channel denies the action, provider implementation exceptions are not retried, and terminal labels escape caller-controlled control characters.
 
 ## Policy baseline
 
@@ -87,14 +91,18 @@ Human-control classifications are `automatic`, `notify`, `approval`, `strong_con
 
 ## Security boundaries and current limitations
 
-SecurityBrightness does not yet execute authorized actions. The audit file is useful for traceability but is not tamper-proof. Sensitive detail keys such as credentials, passwords, secrets, tokens, authorization values, and private keys are recursively redacted before audit records are written. The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers. Authenticated identity and scopes can now be passed separately through an internal `AuthorizationContext`, rather than requiring transport authentication data to be authored directly in caller event details. The HTTP service constructs this context from the registry after credential verification.
+SecurityBrightness does not yet execute authorized actions. The audit file is useful for traceability but is not tamper-proof. Sensitive detail keys containing normalized credential/password/secret/token/authorization/private-key/API-key/cookie/session-ID markers are recursively redacted, including camelCase and punctuation variants. This conservative matching can also redact benign fields such as token counts; it cannot detect secrets embedded in free text or unrelated fields.
+
+Audit updates are serialized between threads in the same process. Each write uses a unique temporary file, flushes and synchronizes it, then atomically replaces the log. Malformed, ambiguous, unreadable, or non-array audit history is preserved and raises `AuditLogError`; it is never silently reset. A persistence failure prevents a successful authorization response (HTTP 503 `audit_unavailable`). An operator must repair or archive a damaged log deliberately before checks can resume. This is a security-related compatibility change from replacing corrupt history.
+
+The application registry is not persistent and does not yet use the operating system credential store. The direct Python API remains available for trusted/in-process callers. Authenticated identity and scopes can now be passed separately through an internal `AuthorizationContext`, rather than requiring transport authentication data to be authored directly in caller event details. The HTTP service constructs this context from the registry after credential verification.
 
 Known remaining weaknesses requiring further batches:
 
 - The trusted Python API still accepts legacy identity fields in event details; it must never be exposed directly to untrusted callers. `AuthorizationContext` is a trusted internal object, not a proof of authentication.
-- HTTP parsing is duplicated and lacks strict duplicate-header/JSON-key handling, finite-number enforcement, and bounded read timeouts. This single-threaded service can be stalled by a client or a pending terminal approval. Early rejection without reading a request body can cause a connection reset on Windows instead of a readable error response.
-- Approval-provider return values are interpreted by truthiness, and legacy providers need not support strong confirmation. The approval display needs protection against caller-supplied terminal control characters.
-- Audit redaction recognizes only listed exact keys; free-text secrets and key variants may leak. Malformed audit history is replaced, and concurrent writers are not coordinated. Lifecycle changes are not audited.
+- The service remains single-threaded. The read deadline bounds one slow request, but repeated connections, queued connections, and pending terminal approval can still delay others. There is no rate limiting or independent approval UI. Extremely large/rejected uploads may still end in a connection reset.
+- Approval providers are trusted in-process code. Accepting `strong=True` cannot prove that a provider actually obtained human confirmation; the service does not sandbox providers or bind an approval cryptographically to later execution.
+- Audit logs are not tamper-proof, have no rotation/size cap, and rewrite the entire history on each event. The lock does not coordinate multiple processes; use a single writer. Atomic replacement and file synchronization do not guarantee directory durability across every power-loss scenario. Free-text secrets can leak, and lifecycle changes are not audited.
 - Policies infer sensitivity from action/target labels, scopes are not resource-specific, and authorization is not bound to a later execution. Registry locking does not make an entire authorization/approval flow atomic with revocation.
 - The standalone `index.html` scanner and the bundled SoulScript ZIP are separate artifacts, not authorization enforcement components. The core unittest suite does not test their behavior.
 

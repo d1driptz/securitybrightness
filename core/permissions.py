@@ -23,19 +23,31 @@ class PermissionResult:
     scope_granted: bool = False
 
 
+class ApprovalProviderError(RuntimeError):
+    """The configured human approval channel cannot safely answer this request."""
+
+
 def _ask_provider(provider, event, strong):
-    method = provider.request_approval
-    parameters = inspect.signature(method).parameters
-    supports_strong = (
-        "strong" in parameters
-        or any(
-            parameter.kind == inspect.Parameter.VAR_KEYWORD
-            for parameter in parameters.values()
-        )
-    )
-    if supports_strong:
-        return method(event, strong=strong)
-    return method(event)
+    try:
+        method = provider.request_approval
+        signature = inspect.signature(method)
+        try:
+            signature.bind(event, strong=strong)
+            kwargs = {"strong": strong}
+        except TypeError:
+            if strong:
+                raise ApprovalProviderError("provider must support strong confirmation")
+            signature.bind(event)
+            kwargs = {}
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise ApprovalProviderError("invalid approval provider signature") from exc
+    try:
+        approved = method(event, **kwargs)
+    except EOFError:
+        return False
+    if type(approved) is not bool:
+        raise ApprovalProviderError("approval provider must return a boolean")
+    return approved
 
 
 def request_permission(event: SecurityEvent, approval_provider=None) -> PermissionResult:
@@ -62,7 +74,7 @@ def request_permission(event: SecurityEvent, approval_provider=None) -> Permissi
         )
         decision_source = "scope"
     elif needs_approval:
-        provider = approval_provider or TerminalApprovalProvider()
+        provider = TerminalApprovalProvider() if approval_provider is None else approval_provider
         strong = control.level == HumanControlLevel.STRONG_CONFIRM
         approved = _ask_provider(provider, event, strong)
         decision_source = "user"
