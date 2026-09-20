@@ -129,3 +129,5 @@ Every substantial batch should identify the capability advanced, preserve compat
 ## Architecture decisions
 
 [Proposal lifecycle and human authority](decisions/0001-proposals-and-human-authority.md) records the accepted A prototype threat model and required migration milestone B. Trust the local operator environment for the first desktop reviewer; do not claim protection against hostile same-user processes. The versioned/asynchronous application contract remains future design.
+
+[Persistent registration and authority lifecycle](decisions/0002-persistent-authority-lifecycle.md) proposes the next persistence boundary. Whether saved grants activate automatically or require operator unlock after restart is pending product-owner input; persistence is not implemented.

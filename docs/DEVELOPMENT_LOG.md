@@ -54,10 +54,17 @@ This log records scope, evidence and limits, not a claim of complete security. C
 - Regression evidence covers authority-free details through the API and real HTTP audit, rejection of mixed input, context precedence despite later detail mutation, and human review for an unauthenticated context. Reviewed all identity/scope consumers and the final diff.
 - Publication is recorded by this entry's commit and branch history. Remaining limits: legacy no-context Python remains trusted; same-process code can replace objects; this data separation is not B's OS isolation or downstream enforcement.
 
-## Read-only desktop application authority view
+## Read-only desktop application authority view - 92ccec9
 
 - Added immutable ApplicationSummary registry snapshots without credentials or hashes, and a desktop Applications tab showing IDs, trust and scopes. Selected rows expose the full escaped scope list. Refresh is read-only and never participates in authorization.
 - An arriving review selects the Human review tab without submitting any answer. Registration/rotation/revocation/permission changes remain on the existing administrative path; no new HTTP routes or authority were added.
 - Focused registry/desktop suite: 20 passed in 0.395s. Final full suite: 174 passed in 11.391s, no skips in this environment.
 - Reviewed credential non-disclosure, immutable snapshots across update/rotation/revocation, actual Tk population/removal/selection, switching to pending review, and existing strong-confirmation/closure behavior. Documentation links and final diff checked.
 - Publication is recorded by this entry's commit and branch history. Remaining limits: display can be stale between refreshes, grants remain ephemeral and broad, lifecycle controls are not in the GUI, and prototype A does not protect against hostile same-user processes.
+
+## Persistent authority activation decision proposal
+
+- After remotely verifying all three A-aligned implementation batches, assessed persistence as the next product dependency so applications need not be reprovisioned after every restart.
+- Recorded two startup activation choices and storage/rollback constraints. No persistence, unlock endpoint or lifetime extension is implemented by this documentation.
+- Reviewed against the current ephemeral registry and accepted A-to-B migration. Unchanged code baseline: 174 passed in 11.391s; documentation links checked. This is not an additional test-count milestone.
+- Owner input is required because surviving a restart changes the lifetime/activation of human-delegated authority, not merely the file format.
