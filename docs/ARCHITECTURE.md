@@ -57,11 +57,11 @@ Registered HTTP requests capture registry and activation identity. After review,
 
 The `notify` level is classification metadata only; there is no separate notification delivery mechanism. The standalone [browser scanner](../index.html) and the bundled SoulScript ZIP are separate artifacts, not the human-control application or an enforcement layer. Core tests do not validate them as such.
 
+The independent [File Security contract](file-security.md) in `file_security/text_analysis.py` analyzes supplied bounded immutable bytes with three literal private-key-header rules. It imports no core authority components and returns no authorization decision. The desktop now has a separate operator-selected regular-file acquisition/review panel; the HTTP API does not expose analysis. Tests cover the contract, worker, acquisition and real widgets. This is a narrow prototype, not broad endpoint protection.
+
+`file_security.worker` runs only the packaged analyzer with bounded nonblocking pipes, deadlines, cleanup and strict result validation. It receives no core credentials or callbacks. A separate process improves availability handling but retains the same OS privileges: no hostile-process sandbox, human authentication or enforcement authority is introduced. Desktop acquisition occurs outside the UI thread and supplies bytes to this worker; it has no hard filesystem-I/O deadline. The authorization core still does not execute proposed actions.
+
 ## Planned architecture: intended responsibilities, not implemented modules
-
-The independent [File Security contract](file-security.md) in `file_security/text_analysis.py` now analyzes supplied bounded immutable bytes with three literal private-key-header rules. It imports no core authority components and returns no authorization decision. It has no acquisition, desktop/HTTP integration or OS isolation; tests live in `core/test_file_security.py`. This is an analysis foundation, not the planned installed security capability.
-
-Optional `file_security.worker` runs only the packaged analyzer with bounded nonblocking pipes, deadlines, cleanup and strict result validation. It receives no core credentials or callbacks. A separate process improves availability handling but retains the same OS privileges: no hostile-process sandbox, human authentication or enforcement authority is introduced. Desktop and HTTP do not yet invoke it.
 
 ```text
 Integrated application / AI tool adapter

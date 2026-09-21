@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import unittest
 from unittest.mock import Mock, patch
 
@@ -33,7 +34,7 @@ class AnalysisWorkerTests(unittest.TestCase):
         if os.name == 'nt':
             self.assertEqual(options['creationflags'], subprocess.CREATE_NO_WINDOW)
 
-    def run_fault(self, code, expected, timeout=5):
+    def run_fault(self, code, expected, timeout=5, cancel=None):
         real_popen = subprocess.Popen
         children = []
         def launch(args, **kwargs):
@@ -42,7 +43,7 @@ class AnalysisWorkerTests(unittest.TestCase):
             return child
         with patch.object(worker.subprocess, 'Popen', side_effect=launch):
             with self.assertRaisesRegex(worker.AnalysisUnavailable, expected):
-                worker.analyze_in_worker(b'', timeout=timeout)
+                worker.analyze_in_worker(b'', timeout=timeout, cancel=cancel)
         self.assertTrue(children)
         self.assertIsNotNone(children[0].poll())
         self.assertTrue(children[0].stdin.closed)
@@ -53,6 +54,19 @@ class AnalysisWorkerTests(unittest.TestCase):
 
     def test_timeout_kills_and_reaps_worker(self):
         self.run_fault('import time; time.sleep(30)', 'analysis_timeout', timeout=0.2)
+
+    def test_cancellation_reaps_active_worker_and_prevents_late_launch(self):
+        cancel = threading.Event()
+        timer = threading.Timer(0.5, cancel.set)
+        timer.start()
+        try:
+            self.run_fault('import time; time.sleep(30)', 'analysis_cancelled', cancel=cancel)
+        finally:
+            timer.cancel()
+            timer.join()
+        with patch.object(worker.subprocess, 'Popen', side_effect=AssertionError('must not launch')):
+            with self.assertRaisesRegex(worker.AnalysisUnavailable, 'analysis_cancelled'):
+                worker.analyze_in_worker(b'late snapshot', cancel=cancel)
 
     def test_output_flood_is_bounded_and_worker_failure_is_not_clean(self):
         self.run_fault("import sys; sys.stdout.buffer.write(b'x' * 20000); sys.stdout.buffer.flush()", 'analysis_output_limit')

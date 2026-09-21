@@ -14,9 +14,9 @@ A shared action catalog distinguishes categories such as files, communications, 
 
 Important limits: scopes are broad action scopes, not resource/recipient/amount limits; grants do not expire automatically. Registration is session-only by default; optional persistence restores grants inactive until operator unlock. Approval remains synchronous, with no application-facing asynchronous review API, durable review queue, signed capability, OS interception or execution broker. The standalone browser scanner is separate. See the implementation evidence in [Architecture](ARCHITECTURE.md#current-implementation-and-evidence).
 
-## 2. Planned product architecture
+A separate [File Security prototype](file-security.md) now reviews an explicitly operator-selected regular UTF-8 file for three private-key header shapes, using bounded acquisition, a fixed analysis worker and versioned redacted evidence. It has no malware verdict, remediation or authority access. This narrow implemented workflow does not establish the planned broader File Security protection capability.
 
-A separate [supplied-content analysis contract](file-security.md) now recognizes three private-key header shapes in bounded UTF-8 bytes, returning versioned redacted evidence. It has no file acquisition, desktop integration, malware verdict or authority access. This narrow implemented foundation does not establish the planned File Security protection capability.
+## 2. Planned product architecture
 
 The following are intended product capabilities, not existing features or delivery dates. Build them in cohesive increments with explicit security decisions where needed.
 

@@ -21,7 +21,7 @@ class AnalysisUnavailable(RuntimeError):
     """No analysis conclusion is available; the reason contains no sample text."""
 
 
-def analyze_in_worker(content: bytes, *, timeout: float = 5.0):
+def analyze_in_worker(content: bytes, *, timeout: float = 5.0, cancel: threading.Event | None = None):
     """Run only the packaged analyzer. Busy/failure/timeout never means safe.
 
     No executable, path, command, environment or callback is caller-selectable.
@@ -31,6 +31,10 @@ def analyze_in_worker(content: bytes, *, timeout: float = 5.0):
         raise TypeError("content must be immutable bytes")
     if type(timeout) not in (float, int) or not 0 < timeout <= 60:
         raise ValueError("timeout must be finite and between zero and 60 seconds")
+    if cancel is not None and type(cancel) is not threading.Event:
+        raise TypeError("cancel must be a threading.Event")
+    if cancel is not None and cancel.is_set():
+        raise AnalysisUnavailable("analysis_cancelled")
     if len(content) > MAX_BYTES:
         return analyze_bytes(content)  # bounded rejection before child creation
     if not _slot.acquire(blocking=False):
@@ -55,6 +59,8 @@ def analyze_in_worker(content: bytes, *, timeout: float = 5.0):
         input_closed = False
         output_closed = False
         while True:
+            if cancel is not None and cancel.is_set():
+                raise AnalysisUnavailable("analysis_cancelled")
             if time.monotonic() >= deadline:
                 raise AnalysisUnavailable("analysis_timeout")
             if not input_closed:

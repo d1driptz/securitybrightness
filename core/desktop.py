@@ -1,10 +1,11 @@
-"""Local operator desktop: python -m core.desktop. Authorization only."""
+"""Local operator review and selected-file analysis; core never executes actions."""
 import argparse
 import json
 import os
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
+from file_security.desktop import FileReviewPanel
 
 from .review_channel import OperatorReviewChannel
 from .registry import ApplicationRegistry
@@ -38,6 +39,7 @@ class ReviewWindow:
         self.persistent_mode = persistent_mode
         self._application_rows = {}
         self._poll_count = 0
+        self._poll_timer = None
         self._application_snapshot = None
         self.closed = False
         root.title("SecurityBrightness - Human review")
@@ -51,6 +53,8 @@ class ReviewWindow:
         self.review_frame = frame
         applications = ttk.Frame(tabs, padding=20)
         tabs.add(applications, text="Applications")
+        self.file_review = FileReviewPanel(tabs)
+        tabs.add(self.file_review.frame, text="File Security prototype")
         ttk.Label(applications, text="Registered applications", font=("Segoe UI", 16, "bold")).pack(anchor="w")
         ttk.Label(applications, text=("Stored grants start locked. Unlock only the authority you intend to enable for this session." if persistent_mode else "Session-only registry. Registrations are lost when this service stops. Scopes are not resource-specific."),
                   wraplength=730).pack(anchor="w", pady=(8, 14))
@@ -181,6 +185,8 @@ class ReviewWindow:
     def poll(self):
         if self.closed:
             return
+        if self._poll_timer is not None:
+            self.root.after_cancel(self._poll_timer)
         if self._poll_count % 10 == 0:
             self.refresh_applications()
         self._poll_count += 1
@@ -208,7 +214,7 @@ class ReviewWindow:
         state = "normal" if review else "disabled"
         self.allow.configure(state=state)
         self.deny.configure(state=state)
-        self.root.after(100, self.poll)
+        self._poll_timer = self.root.after(100, self.poll)
 
     def decide(self, approved):
         review = self.current
@@ -232,6 +238,9 @@ class ReviewWindow:
 
     def close(self):
         self.closed = True
+        if self._poll_timer is not None:
+            self.root.after_cancel(self._poll_timer)
+        self.file_review.close()
         if self.authority_lock:
             self.authority_lock()
         self.channel.close()
@@ -259,14 +268,18 @@ def main():
     if not os.environ.get(TOKEN_ENV):
         print(f"Session/admin token: {server.securitybrightness_token}")
     print("Keep the admin token private. Provision applications using the existing integration guide.")
+    window = None
     try:
-        ReviewWindow(root, channel, application_reader=registry.list_applications, persistent_mode=registry.persistent,
+        window = ReviewWindow(root, channel, application_reader=registry.list_applications, persistent_mode=registry.persistent,
                      authority_unlock=registry.operator_unlock, authority_revoke=registry.operator_revoke,
                      authority_lock=registry.lock_all)
         root.mainloop()
     finally:
         registry.lock_all()
         channel.close()
+        if window is not None:
+            window.file_review.cancel_analysis()
+            window.file_review.wait_for_cleanup()
         server.shutdown()
         server.server_close()
         worker.join(timeout=6)

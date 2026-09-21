@@ -1,12 +1,12 @@
 # Supplied-content analysis contract v1
 
-Implemented: `file_security.analyze_bytes`, an independent standard-library-only Python component. This is the first File Security analysis contract, not the installed scanner experience or a port of all browser rules. Neither the HTTP service nor desktop calls it yet. No network endpoint or sample acquisition is introduced.
+Implemented: `file_security.analyze_bytes`, an independent standard-library-only Python component, plus a fixed worker and a narrow desktop header-review workflow. This is not a port of all browser rules or malware protection. The HTTP service has no analysis route. The desktop reads only an explicitly operator-selected regular file for this workflow.
 
 ## Threat boundary and authority
 
 An already-authorized caller supplies an immutable bytes snapshot. Content is untrusted data, never instructions or a path. The analyzer imports no authorization modules and accepts no registry, credential, administrative context or operator callback. It does not open paths, execute samples, use a model, contact a network, alter grants or modify/quarantine files. The caller is responsible for legitimate acquisition; this API grants no right to read anything.
 
-This is dependency/authority separation, not OS isolation: Python components sharing a process can compromise each other. A worker availability boundary and eventually justified platform isolation remain separate work. A result is forgeable local data, not signed evidence, an authorization decision or an enforcement capability. Never use `status == "complete"` as permission to execute or as a safety verdict.
+This is dependency/authority separation, not OS isolation: Python components sharing a process can compromise each other. The worker adds availability handling, not privileged isolation. A result is forgeable local data, not signed evidence, an authorization decision or an enforcement capability. Never use `status == "complete"` as permission to execute or as a safety verdict.
 
 ## Input and result
 
@@ -25,6 +25,20 @@ Exactly three case-sensitive literal markers are searched: BEGIN PRIVATE KEY, BE
 The implementation makes three bounded searches over at most 1 MiB and computes at most 15 locations. This is a work/input bound, not an enforced wall-clock deadline, process memory quota or safe parser sandbox. Source bytes remain in caller/runtime memory; redaction is not secure erasure. Hashing a bounded rejected encoding does not imply that it was analyzed successfully.
 
 ## Evidence and migration
+
+### Operator-selected desktop review
+
+The File Security prototype tab offers private-key-header review, explicitly describing its three supported patterns. Selecting a file is a one-time operator request to read/analyze that file, not an application grant or a general file-execution capability. Nothing is scanned on startup or watched afterward. No content, path or analysis result is persisted to the decision audit or sent to a server. The UI shows an escaped, bounded filename, snapshot digest, redacted rule locations/counts and limitations; it does not show secret bodies or claim that dismissal/remediation occurred.
+
+`acquisition.read_selected_file` accepts an absolute path, rejects existing symlink/reparse components and non-regular files, bounds reads to 1 MiB plus one overflow byte, compares the opened identity and checks size/mtime before/after copying. Windows UNC/device/alternate-stream paths are rejected. Mapped drives and filesystem providers are not independently authenticated: selecting such a path can cause ordinary OS filesystem/network access. No directory traversal, scanning of other files, writes or sample execution occurs. The caller must be the trusted operator workflow; this is not exposed as an application endpoint.
+
+Acquisition runs on a single background job per panel, then supplies immutable bytes to the fixed analyzer worker. The panel receives no registry, approval channel or authority callback. Incoming human-review requests still select the review tab and require the existing explicit response. Closing cancels UI timers, fails outstanding authorization reviews as before and does not wait for file I/O; late analysis reports do not touch destroyed widgets.
+
+Important limits: acquisition is trusted in-process code with normal account access. It has no hard file-I/O deadline; slow filesystem providers can leave that panel busy until I/O returns or the application exits, while human review remains responsive. Path checks and size/mtime comparisons are not atomic confinement or a defense against hostile same-user replacement, concurrent edits with restored metadata, or kernel/filesystem compromise. Bytes are a snapshot, not a durable promise about a path. Source data can remain in runtime memory; no secure erasure is claimed. There is no strong sandbox, quarantine or broad File Security protection claim.
+
+Closure sets a cancellation event checked before child creation and during transport. Active analysis is killed/reaped; a delayed read cannot launch a child after cancellation. After the UI loop ends, authority is locked and the review channel closed before waiting up to two seconds for the analysis job. Blocking filesystem acquisition can outlive that wait in a daemon thread; normal process exit releases its handles. Abrupt parent termination is not descendant containment and requires stronger OS process-lifecycle controls before any such guarantee.
+
+`core/test_file_review.py` covers size boundaries, rejected paths/nonfiles, changed/error reads, real Tk-to-worker review, secret non-display, cancellation/failure, pending-review priority and closure during blocked acquisition. These are functional widget tests, not a manual visual/accessibility audit.
 
 ### Optional worker availability boundary
 
@@ -48,4 +62,4 @@ This validates structure and correlation, not completeness or truth. A malicious
 
 `core/test_file_security.py` covers original multibyte/line-ending locations, digest binding, positive/negative/evasion fixtures, bounded retained evidence, source non-disclosure, exact size boundary, malformed content, hostile input types, detached immutable output and internal faults. Synthetic fixtures establish narrow behavior; no detection benchmark, malware coverage or independent assessment is claimed.
 
-Next dependencies: broader evaluated corpora and user-facing acquisition/evidence/limitations. Worker transport now uses consumer validation, but no desktop integration exists. Desktop integration must not embed sample processing inside the trusted approval callback or grant scanner results authority. Retain the independent browser prototype until a deliberate migration has evidence and compatibility handling. Binary/archive parsers, remediation, external models and privileged observation are not implied by this contract.
+Next dependencies: broader evaluated corpora, improved acquisition availability and user-facing evidence/history. The desktop now uses consumer-validated worker output without granting results authority. Retain the independent browser prototype until a deliberate migration has evidence and compatibility handling. Binary/archive parsers, remediation, external models and privileged observation are not implied by this contract.

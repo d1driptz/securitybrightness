@@ -22,6 +22,8 @@ The registry supplies immutable credential-free summaries. The UI receives speci
 
 ## Boundary and replacement path
 
+The File Security prototype tab provides a separate [private-key-header review](file-security.md) for one explicitly selected regular UTF-8 file up to 1 MiB. It is not a malware scan or permission decision. Reading and analysis run outside the UI thread; an arriving authorization review still takes priority. Results show redacted locations, a snapshot digest and limitations. Analysis receives no application/admin credentials, registry or approval channel. No scan happens automatically and no file is modified. Slow acquisition can leave the panel busy; closing the window remains available.
+
 The trusted desktop main thread owns the review interface; the existing HTTP service runs on a worker. OperatorReviewChannel implements the existing approval-provider contract and carries immutable credential-free ReviewRequest messages. Each response names a fresh pending review ID; wrong, expired or already answered IDs cannot approve another request. Strong confirmation is checked in the channel as well as requested by the UI.
 
 Application and administrator credentials are not reviewer credentials and there is no HTTP approval route. The desktop is launched by the local operator; this in-process bootstrap is not OS-backed human-presence authentication. Only the trusted reviewer holds the channel object. Python code in that trusted process can still bypass these conventions; same-user hostile processes are outside A's protection.

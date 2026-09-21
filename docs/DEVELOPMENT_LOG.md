@@ -1,5 +1,14 @@
 # Development batches
 
+## Operator-selected desktop header review
+
+- Added a separate File Security prototype tab for explicit selection of one regular UTF-8 file up to 1 MiB. Bounded read-only acquisition checks type, existing reparse/symlink components, opened identity and size/mtime changes; the fixed worker returns validated redacted evidence. No automatic scan, directory crawl, file modification, analysis endpoint, result persistence or authority change was added.
+- The panel receives no registry, credentials or approval channel. Background acquisition/analysis keeps Human Review responsive and incoming reviews retain priority. Display identifies the selected path safely and reports snapshot digest, rule locations/counts and coverage limits without secret bodies.
+- Review fixed UI timer cleanup and worker shutdown: closure cancels active analysis, delayed reads cannot launch after cancellation, and final shutdown locks authority/closes review before bounded job cleanup. Repeated Tk test roots are garbage-collected on their owning thread rather than background threads.
+- Focused widget/worker/desktop run: 17 tests passed in 4.687s. Final full suite: 217 Python tests in 25.712s and 8 browser tests in 35.1521ms (225 total), no failures/skips/Tk warnings. Existing Windows temporary-directory ACL shim used. Tests cover actual Tk-to-worker operation, redaction, cancellation, changed/missing/oversized files, pending-review priority, closure during delayed I/O and real child cancellation/reaping. This is not manual visual/accessibility validation.
+- Reviewed all acquisition/UI/worker changes against prototype A, authority callbacks, stale results, shutdown order and documented claims. Updated README, current product/architecture statements, desktop/contract guides and sequence. Whitespace checks passed; generated audit changes excluded. Publication is recorded by this entry's commit and branch history.
+- Limits: three literal header shapes only; ordinary account privileges; in-process acquisition with no hard filesystem deadline; non-atomic path/metadata checks; mapped/provider-backed filesystem access may occur for a selected path; no secure memory erasure, malware verdict, quarantine, strong sandbox or protection against hostile same-user processes. The core remains authorization-only.
+
 ## Fixed analysis worker and availability handling
 
 - Added a fixed isolated-mode Python analyzer launcher with supplied-byte stdin, bounded nonblocking output, caller-owned digest validation, one admitted request, monotonic deadlines and kill/reap cleanup. No caller-selected command/path/environment/callback, shell, sample execution, authority import or model dependency is accepted.

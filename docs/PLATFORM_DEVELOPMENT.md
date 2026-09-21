@@ -27,6 +27,8 @@ Gaps include synchronous request blocking, partial audit coverage, code-defined 
 
 ## Dependency-based development sequence
 
+Current follow-up: the desktop now offers explicit selection of one regular file for the three supported private-key-header patterns. It uses the bounded contract/worker and redacted evidence, with no authority objects passed to analysis. Broader detection, acquisition-I/O deadlines, history, device monitoring and the assistant remain planned. Earlier inspection statements below describe their stated baseline, not the current implementation; see [the contract guide](file-security.md) for current behavior and limits.
+
 The first scanner correction batch removes the content exclusion, preserves original locations, withholds matched values, counts every rule occurrence while retaining at most five locations per group, and repairs dismissal without claiming remediation. Selection is limited to .txt/.log/.js files up to 1 MiB; oversized decoded content and NUL-containing content are rejected. Older asynchronous read callbacks cannot overwrite a newer scan. Private-key headers now match at ordinary line starts. Timing includes reading and analysis; the page describes heuristic review rather than an AI or malware verdict.
 
 Run `node tests/test_web_scanner.js` for synthetic regression fixtures using Node's built-in test harness. These exercise the actual page script in a minimal DOM substitute, not a browser layout/accessibility audit or measured detection evaluation. The original five regression fixtures failed before correction. Additional cases cover private-key headers, stale reads and rejected decoded content.

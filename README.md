@@ -38,6 +38,8 @@ This proposes a read and reports its decision; it does not read the file. Inspec
 
 For graphical human review, run `python -m core.desktop` instead of the terminal service. See the [desktop guide](docs/desktop-review.md) for setup, limitations, and the required migration toward stronger Windows isolation.
 
+The desktop also has a narrow [File Security prototype](docs/file-security.md): explicitly choose one file to review three private-key header patterns. It shows redacted evidence, not a malware or safety verdict, and grants no authority.
+
 ## Boundaries
 
 The default registry is in memory; [opt-in persistence](docs/persistent-authority.md) restores grants locked until explicit operator unlock. Desktop review, authority inspection, unlock and confirmed revocation are available. Review remains synchronous, audit history is not tamper-proof, and the direct Python API is for trusted callers. Expiring/resource-specific grants, OS interception and execution brokers are not implemented.
