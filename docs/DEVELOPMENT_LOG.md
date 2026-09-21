@@ -1,5 +1,13 @@
 # Development batches
 
+## Bounded analysis-result consumer validation
+
+- Added strict 16 KiB JSON result validation with exact schema/version/limitations, independent expected digest/length binding, bounded evidence and reconstruction into immutable records. Unknown authority/source fields, duplicate keys, malformed numbers/types, incompatible status/reason and invalid locations fail without reflecting payload contents.
+- Kept result correlation distinct from authenticity: a compromised analyzer can still omit or fabricate plausible findings. This is the consumer prerequisite for future IPC, not an IPC transport, sandbox or permission decision.
+- Focused analysis suites: 15 passed in 0.235s. Full regression: 202 Python tests in 19.841s plus 8 browser tests in 40.3052ms, all passed (210 total, no skips). Python used the existing Windows temporary-directory ACL shim.
+- Reviewed validator bounds, nested duplicate handling, boolean rejection, failure behavior, independent metadata and documentation. Whitespace checks passed; generated audit data excluded. Publication is recorded by this entry's commit and branch history.
+- Remaining dependencies: worker availability/cleanup, evaluated broader detection and desktop acquisition/evidence presentation. No new authority, model dependency, sample execution or privileged access was introduced.
+
 ## Supplied-content File Security contract v1
 
 - Added an independent analysis-only Python API over exact immutable bytes. Three literal private-key header rules return versioned redacted findings, bounded locations/counts, exact-byte digests and explicit unsupported-input reasons. There is no file acquisition, network/model, authority import, human approval or execution path.
