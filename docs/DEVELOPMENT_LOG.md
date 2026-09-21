@@ -1,5 +1,14 @@
 # Development batches
 
+## Fixed analysis worker and availability handling
+
+- Added a fixed isolated-mode Python analyzer launcher with supplied-byte stdin, bounded nonblocking output, caller-owned digest validation, one admitted request, monotonic deadlines and kill/reap cleanup. No caller-selected command/path/environment/callback, shell, sample execution, authority import or model dependency is accepted.
+- Child environment excludes application/admin secrets and Python injection variables, extra handles are closed, stderr is discarded and Windows workers have no console window. This is availability handling under prototype A, not reduced OS privileges or a hostile-process sandbox.
+- Review identified unconfirmed cleanup as an admission risk; cleanup failure now keeps admission closed until restart, preventing repeated launches from accumulating potentially live children. Added the corresponding regression.
+- Final suite: 210 Python tests passed in 22.664s; unchanged browser suite 8 passed in 54.3626ms (218 total, no failures/skips). Python used the existing Windows temporary-directory ACL shim. Worker tests launch real children and cover maximum input, timeout reaping, output floods, crashes, invalid/wrong-artifact results, environment separation, busy/oversize admission and cleanup failure.
+- Reviewed code, transport bounds, fixed launch/secret handling, timeout and exceptional cleanup, documentation and whitespace. Test-generated audit changes excluded. Publication is recorded by this entry's commit and branch history.
+- Limits: no hard process-creation deadline, memory quota, restricted token or descendant containment; trusted runtime/install and same-user environment remain required. The API is synchronous and is not connected to the desktop or HTTP service. No acquisition, malware verdict, enforcement or human authority was added.
+
 ## Bounded analysis-result consumer validation
 
 - Added strict 16 KiB JSON result validation with exact schema/version/limitations, independent expected digest/length binding, bounded evidence and reconstruction into immutable records. Unknown authority/source fields, duplicate keys, malformed numbers/types, incompatible status/reason and invalid locations fail without reflecting payload contents.
