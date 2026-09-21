@@ -16,6 +16,8 @@ Important limits: scopes are broad action scopes, not resource/recipient/amount 
 
 ## 2. Planned product architecture
 
+A separate [supplied-content analysis contract](file-security.md) now recognizes three private-key header shapes in bounded UTF-8 bytes, returning versioned redacted evidence. It has no file acquisition, desktop integration, malware verdict or authority access. This narrow implemented foundation does not establish the planned File Security protection capability.
+
 The following are intended product capabilities, not existing features or delivery dates. Build them in cohesive increments with explicit security decisions where needed.
 
 | Product capability | Intended outcome | Gap from today |

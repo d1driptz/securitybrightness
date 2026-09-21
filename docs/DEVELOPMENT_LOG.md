@@ -1,5 +1,13 @@
 # Development batches
 
+## Supplied-content File Security contract v1
+
+- Added an independent analysis-only Python API over exact immutable bytes. Three literal private-key header rules return versioned redacted findings, bounded locations/counts, exact-byte digests and explicit unsupported-input reasons. There is no file acquisition, network/model, authority import, human approval or execution path.
+- Documented input/output semantics, adversarial coverage, digest privacy, unsupported encodings/formats and migration dependencies. This advances the platform sequence's analysis contract, not a desktop scanner or malware engine. Existing browser and authorization APIs are unchanged.
+- Focused tests: 8 passed in 0.325s. Full suite: 195 Python tests passed in 22.349s, plus 8 browser-script tests in 49.5445ms (203 total, no failures/skips). Python tests used the existing Windows temporary-directory ACL shim. Tests include malformed/control data, exact size boundary, immutable display snapshots, adversarial type rejection, fault propagation and evasion/negative fixtures.
+- Reviewed all new source and tests, authority dependencies, redaction, location semantics and documentation; whitespace checks passed. Publication is recorded by this entry's commit and branch history.
+- Limits: no process isolation/deadline, no result authenticity, no binary/archive analysis, no desktop acquisition, and only three exact header patterns. A complete result means those rules ran, never that an artifact is safe or authorized. Consumer validation and worker availability precede UI reuse.
+
 This log records scope, evidence and limits, not a claim of complete security. Commit history supplies the exact diff for each entry. All batches preserve authorization-only behavior. Test runs below used `python -m unittest discover -s core -p "test_*.py" -v` on Windows; in this sandbox an external test-only temporary-directory permission shim was needed. It changes temporary-directory creation permissions, not authorization/audit code. It is not shipped in the repository.
 
 ## Product vision and architecture - 2626152

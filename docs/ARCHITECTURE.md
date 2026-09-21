@@ -59,6 +59,8 @@ The `notify` level is classification metadata only; there is no separate notific
 
 ## Planned architecture: intended responsibilities, not implemented modules
 
+The independent [File Security contract](file-security.md) in `file_security/text_analysis.py` now analyzes supplied bounded immutable bytes with three literal private-key-header rules. It imports no core authority components and returns no authorization decision. It has no acquisition, desktop/HTTP integration or OS isolation; tests live in `core/test_file_security.py`. This is an analysis foundation, not the planned installed security capability.
+
 ```text
 Integrated application / AI tool adapter
     -> structured proposal contract and authenticated application/delegation identity
