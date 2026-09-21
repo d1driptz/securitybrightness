@@ -273,13 +273,14 @@
   <div class="container">
     <div class="hero">
       <h1>Security Brightness 🔐</h1>
-      <p>AI Security Scanner</p>
+      <p>Text security pattern review — prototype</p>
+      <p class="note">Local heuristics, not an AI model or malware scan. Matches need human review; no matches do not prove safety. Files are not modified.</p>
     </div>
 
     <div class="card">
       <div class="section-title">
-        <h2>Upload area</h2>
-        <span class="note">Supported: .txt, .log, .js</span>
+        <h2>Select a local text file</h2>
+        <span class="note">Supported: .txt, .log, .js — maximum 1 MiB</span>
       </div>
       <div class="upload-row">
         <input id="fileInput" class="file-input" type="file" accept=".txt,.log,.js,text/plain,application/javascript" />
@@ -291,7 +292,7 @@
     <div class="card" id="summaryCard">
       <div class="section-title">
         <h2>Summary</h2>
-        <span class="note" id="summaryNote">Upload a file to start scanning.</span>
+        <span class="note" id="summaryNote">Select a file to start a local pattern review.</span>
       </div>
       <div class="summary-grid" id="summary"></div>
     </div>
@@ -299,7 +300,7 @@
     <div class="card">
       <div class="section-title">
         <h2>Scan results</h2>
-        <span class="note">Issues are grouped by severity and include exact line location, snippet, and fix guidance.</span>
+        <span class="note">Heuristic patterns are grouped by review priority, with locations and redacted evidence. Matches may be benign; credential validity and threat severity are not verified.</span>
       </div>
       <div id="result" class="results"></div>
     </div>
@@ -307,7 +308,9 @@
 </div>
 
 <script>
-let scanState = { text: "", highRisk: [], mediumRisk: [], lowRisk: [] };
+const MAX_FILE_BYTES = 1024 * 1024;
+let scanGeneration = 0;
+let scanState = { text: "", highRisk: {}, mediumRisk: {}, lowRisk: {}, dismissed: 0 };
 
 function updateFileStatus() {
   const fileInput = document.getElementById("fileInput");
@@ -317,6 +320,8 @@ function updateFileStatus() {
 }
 
 function scan() {
+  const generation = ++scanGeneration;
+  scanState = { text: "", highRisk: {}, mediumRisk: {}, lowRisk: {}, dismissed: 0 };
   const fileInput = document.getElementById("fileInput");
   const file = fileInput.files[0];
   const resultArea = document.getElementById("result");
@@ -331,7 +336,12 @@ function scan() {
 
   if (!file) {
     summaryNote.textContent = "Select a file before scanning.";
-    resultArea.innerHTML = `<div class="result-card high"><h3>No file selected</h3><p>Please upload a .txt, .log, or .js file to scan its contents.</p></div>`;
+    resultArea.innerHTML = `<div class="result-card high"><h3>No file selected</h3><p>Please select a .txt, .log, or .js file to review its contents locally.</p></div>`;
+    return;
+  }
+
+  if (!/\.(txt|log|js)$/i.test(file.name) || file.size > MAX_FILE_BYTES) {
+    summaryNote.textContent = "Not analyzed: select a .txt, .log, or .js file no larger than 1 MiB.";
     return;
   }
 
@@ -340,10 +350,11 @@ function scan() {
   const startTime = Date.now();
   const reader = new FileReader();
   reader.onload = function(event) {
-    const scanTime = Date.now() - startTime;
-    analyzeText(event.target.result, file.name, scanTime);
+    if (generation !== scanGeneration) return;
+    analyzeText(event.target.result, file.name, startTime);
   };
   reader.onerror = function() {
+    if (generation !== scanGeneration) return;
     summaryNote.textContent = "Unable to read the selected file.";
     fileStatus.textContent = "File read failed.";
     resultArea.innerHTML = `<div class="result-card high"><h3>Read error</h3><p>Unable to read the selected file. Try another file.</p></div>`;
@@ -360,13 +371,6 @@ function getLineColumn(text, index) {
   };
 }
 
-function getSnippet(text, index) {
-  const start = Math.max(0, index - 28);
-  const end = Math.min(text.length, index + 84);
-  const slice = text.slice(start, end).replace(/\r\n|\n/g, ' [newline] ');
-  return `${start > 0 ? '...' : ''}${slice}${end < text.length ? '...' : ''}`;
-}
-
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, function(match) {
     return {
@@ -380,32 +384,30 @@ function escapeHtml(value) {
 }
 
 function reportMatch(state, severity, message, match, suggestion) {
-  const position = getLineColumn(state.text, match.index);
   if (!state[severity][message]) {
-    state[severity][message] = { suggestion, matches: [] };
+    state[severity][message] = { suggestion, matches: [], count: 0 };
   }
+  state[severity][message].count++;
   if (state[severity][message].matches.length < 5) {
+    const position = getLineColumn(state.text, match.index);
     state[severity][message].matches.push({
       line: position.line,
       column: position.column,
-      snippet: match[0],
+      snippet: "[Matched text withheld to avoid exposing sensitive contents]",
     });
   }
 }
 
-function analyzeText(text, fileName, scanTime) {
-  const normalized = text.toLowerCase();
-  scanState = { text, highRisk: {}, mediumRisk: {}, lowRisk: {} };
-
-  // Exclude the patterns array from scanning to avoid false positives
-  let scanText = text;
-  const patternsStart = scanText.indexOf('patterns = [');
-  if (patternsStart !== -1) {
-    const patternsEnd = scanText.indexOf('];', patternsStart);
-    if (patternsEnd !== -1) {
-      scanText = scanText.slice(0, patternsStart) + scanText.slice(patternsEnd + 2);
-    }
+function analyzeText(text, fileName, startTime = Date.now()) {
+  scanState = { text: "", highRisk: {}, mediumRisk: {}, lowRisk: {}, dismissed: 0 };
+  if (typeof text !== "string" || text.length > MAX_FILE_BYTES || text.includes("\u0000")) {
+    document.getElementById("summaryNote").textContent = "Not analyzed: unsupported or oversized text input.";
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("summary").innerHTML = "";
+    return;
   }
+  scanState.text = text;
+  const scanText = text;
 
   const patterns = [
     { regex: /\bsk-[A-Za-z0-9]{48}\b/g, severity: 'highRisk', message: 'OpenAI API key detected.', suggestion: 'Move this key to secure storage and rotate it immediately.' },
@@ -416,7 +418,7 @@ function analyzeText(text, fileName, scanTime) {
     { regex: /\bsk_live_[A-Za-z0-9]{24}\b/g, severity: 'highRisk', message: 'Stripe live key detected.', suggestion: 'Remove live keys from source and use safe configuration management.' },
     { regex: /\beyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/g, severity: 'highRisk', message: 'JWT token pattern detected.', suggestion: 'Remove tokens from source and secure them separately.' },
     { regex: /(?:api[_-]?key|access[_-]?key|secret|token|password|pwd|pass|client[_-]?secret)\s*(?:=|:)\s*['"][A-Za-z0-9\-_=]{16,}['"]/gi, severity: 'highRisk', message: 'Hardcoded credential or secret detected.', suggestion: 'Replace this with a secure value reference and remove it from code.' },
-    { regex: /\b(?:-----BEGIN PRIVATE KEY-----|-----BEGIN RSA PRIVATE KEY-----|-----BEGIN OPENSSH PRIVATE KEY-----)\b/g, severity: 'highRisk', message: 'Private key material detected.', suggestion: 'Keep private keys out of source files and use secure key storage.' },
+    { regex: /-----BEGIN (?:RSA |OPENSSH )?PRIVATE KEY-----/g, severity: 'highRisk', message: 'Private-key header pattern matched.', suggestion: 'Review whether this is key material; keep private keys out of shared files.' },
     { regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, severity: 'mediumRisk', message: 'Email address detected.', suggestion: 'Remove personal email addresses from shared files.' },
     { regex: /\b[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?]{12,}\b/g, severity: 'mediumRisk', message: 'Strong password-like string detected.', suggestion: 'Avoid embedding passwords; use a secret manager instead.', filter: (value, match, text) => /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /\b(?:password|token|key|secret|api_key|access_key|client_secret|auth|credential)\b/i.test(text.slice(Math.max(0, match.index-100), match.index + value.length + 100)) && !/\b(?:transform|background|color|font|margin|padding|border|width|height|px|em|rem|vh|vw|<|>|'|"|class|id|style)\b/i.test(text.slice(Math.max(0, match.index-50), match.index + value.length + 50)) },
     { regex: /(https?:\/\/[^"]+)\?[^&\s]*\b(?:key|token|secret|password|api_key|auth)\b[^&\s]*/gi, severity: 'mediumRisk', message: 'URL with sensitive parameters detected.', suggestion: 'Move secrets out of URL query strings.' },
@@ -445,16 +447,20 @@ function analyzeText(text, fileName, scanTime) {
     }
   });
 
-  displayResults(scanState, fileName, scanTime);
+  scanState.text = "";
+  scanState.fileName = fileName;
+  scanState.scanTime = Math.max(0, Date.now() - (startTime || Date.now()));
+  displayResults(scanState);
 }
 
-function displayResults({ highRisk, mediumRisk, lowRisk }, fileName = '', scanTime = 0) {
+function displayResults({ highRisk, mediumRisk, lowRisk, dismissed = 0, fileName = '', scanTime = 0 }) {
   const resultArea = document.getElementById("result");
   const summaryArea = document.getElementById("summary");
   const summaryNote = document.getElementById("summaryNote");
   const total = Object.keys(highRisk).length + Object.keys(mediumRisk).length + Object.keys(lowRisk).length;
 
-  summaryNote.textContent = total ? (scanTime ? `Scan complete in ${scanTime} ms — ${total} findings found. File scanned: ${fileName}` : `${total} findings found.`) : (scanTime ? `Scan complete in ${scanTime} ms — no obvious issues found. File scanned: ${fileName}` : "No obvious issues found.");
+  const occurrences = [highRisk, mediumRisk, lowRisk].flatMap(group => Object.values(group)).reduce((sum, item) => sum + item.count, 0);
+  summaryNote.textContent = `${total} visible pattern groups; ${occurrences} visible rule matches; ${dismissed} groups dismissed. File: ${fileName}. Read + analysis: ${scanTime} ms. Not a safety verdict.`;
   summaryArea.innerHTML = `
     <span class="pill high">High ${Object.keys(highRisk).length}</span>
     <span class="pill medium">Medium ${Object.keys(mediumRisk).length}</span>
@@ -462,12 +468,12 @@ function displayResults({ highRisk, mediumRisk, lowRisk }, fileName = '', scanTi
   `;
 
   let html = "";
-  html += renderCategory("high", "🔴 High Risk", highRisk);
-  html += renderCategory("medium", "🟡 Medium Risk", mediumRisk);
-  html += renderCategory("low", "🟢 Low Risk", lowRisk);
+  html += renderCategory("high", "High-priority patterns", highRisk);
+  html += renderCategory("medium", "Medium-priority patterns", mediumRisk);
+  html += renderCategory("low", "Low-priority patterns", lowRisk);
 
   if (!html) {
-    html = `<div class="result-card low"><h3>? No obvious issues detected</h3><p>Still re-scan after edits and review results manually.</p></div>`;
+    html = `<div class="result-card low"><h3>No visible pattern groups</h3><p>This is not proof of safety. Dismissal does not repair or modify the file. Review limitations and rescan after any edits.</p></div>`;
   }
 
   resultArea.innerHTML = html;
@@ -482,16 +488,16 @@ function renderCategory(style, title, items) {
       <ul class="result-list">
         ${keys.map(message => {
           const item = items[message];
-          const matchCount = item.matches.length;
+          const matchCount = item.count;
           const lines = [...new Set(item.matches.map(m => m.line))].join(', ');
-          const extra = matchCount >= 5 ? ' (showing first 5)' : '';
+          const extra = matchCount > item.matches.length ? ' (showing first 5 locations)' : '';
           return `
             <li>
-              <div class="result-text">${escapeHtml(message)} (${matchCount} matches)</div>
+              <div class="result-text">Heuristic rule: ${escapeHtml(message)} (${matchCount} matches)</div>
               <div class="result-meta">Lines: ${lines}${extra}</div>
               ${item.matches.slice(0, 1).map(m => `<div class="result-snippet">Example match: "${escapeHtml(m.snippet)}"</div>`).join('')}
-              <p class="suggestion">Suggestion: ${escapeHtml(item.suggestion)}</p>
-              <button type="button" class="issue-button" data-severity="${style}Risk" data-message="${encodeURIComponent(message)}">Mark as fixed</button>
+              <p class="suggestion">If review confirms sensitive content: ${escapeHtml(item.suggestion)}</p>
+              <button type="button" class="issue-button" data-severity="${style}Risk" data-message="${encodeURIComponent(message)}">Dismiss group from view</button>
             </li>
           `;
         }).join("")}
@@ -501,9 +507,12 @@ function renderCategory(style, title, items) {
 }
 
 function removeIssue(severity, encodedMessage) {
-  const message = decodeURIComponent(encodedMessage);
+  if (!["highRisk", "mediumRisk", "lowRisk"].includes(severity) || typeof encodedMessage !== "string") return;
+  let message;
+  try { message = decodeURIComponent(encodedMessage); } catch { return; }
   if (!scanState[severity] || !scanState[severity][message]) return;
   delete scanState[severity][message];
+  scanState.dismissed++;
   displayResults(scanState);
 }
 
@@ -516,7 +525,7 @@ window.addEventListener("DOMContentLoaded", function() {
   resultArea.addEventListener("click", function(event) {
     const button = event.target.closest(".issue-button");
     if (!button) return;
-    removeIssue(button.dataset.severity, Number(button.dataset.index));
+    removeIssue(button.dataset.severity, button.dataset.message);
   });
 });
 </script>

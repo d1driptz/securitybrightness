@@ -10,6 +10,7 @@ Today it is an **authorization-only Python core, local HTTP service, and applica
 
 - [Product vision](docs/PRODUCT_VISION.md): implemented capabilities, planned product direction, and longer-term possibilities.
 - [Architecture](docs/ARCHITECTURE.md): trust boundaries, implementation evidence, dependencies, and architectural decision gates.
+- [Platform development sequence](docs/PLATFORM_DEVELOPMENT.md): scanner/desktop assessment and dependencies for File Security, Device Security and the Security Assistant.
 - [Application and AI integration](docs/application-integration.md): provisioning, SDK usage, human review, and a runnable example.
 - [Current behavior and service reference](docs/CURRENT_BEHAVIOR.md): HTTP contract, compatibility notes, and known limitations.
 
@@ -47,6 +48,7 @@ An application must integrate with an enforcement point SecurityBrightness contr
 
 ```bash
 python -m unittest discover -s core -p "test_*.py" -v
+node tests/test_web_scanner.js
 ```
 
 Tests support specific behavior claims, not complete security. Development should follow the [product vision](docs/PRODUCT_VISION.md) and [architecture](docs/ARCHITECTURE.md), keeping current claims synchronized with code and evidence.
