@@ -1,5 +1,13 @@
 # Development batches
 
+## Reproducible file-header coverage evaluation
+
+- Added a developer-only, version-pinned 23-case synthetic corpus and JSON report using the real fixed worker/consumer validator. Separate groups retain supported markers (7), benign inputs without markers (4), benign literal matches (2), known misses (6) and rejected inputs (4). Expected blind spots are not counted as successful detection.
+- The standalone evaluation reproduced all 23 expectations with no mismatches/unavailable results; diagnostic aggregate elapsed time was 4601.013ms, maximum single-case time 622.731ms on this machine. These timings are not portable performance or deadline claims. No working keys, imported datasets, selected paths, network requests or new runtime authority are involved.
+- Regression tests exercise the real corpus, silent finding loss, worker failure and unsupported analyzer-version migration. Final full suite: 230 Python tests in 30.917s plus 8 browser tests in 36.7717ms (238 total), no failures/skips/Tk warnings; existing Windows temporary-directory ACL shim used.
+- Reviewed code, corpus expectations, reporting/exit semantics, no-source error handling and documentation against the authorization-only boundary. Whitespace checks passed and generated audit changes excluded. Publication is recorded by this entry's commit and branch history.
+- Limits: small same-project synthetic corpus, no population precision/recall, malware or cryptographic validation, independent labeling, peak-memory benchmark or OS isolation. Runtime detector coverage is unchanged. Broader representative evaluation and stronger protection remain planned.
+
 ## Decision-history policy compatibility correction
 
 - Reassessment found that history recognized `destructive_action` instead of the policy's actual `change_or_execute` rule. Corrected the display allowlist; no policy or authority behavior changed.

@@ -27,6 +27,8 @@ At the inspection baseline, gaps included synchronous request blocking, partial 
 
 ## Dependency-based development sequence
 
+Evaluation follow-up: step 3 now includes a reproducible [23-case synthetic coverage evaluation](file-analysis-evaluation.md) of the fixed worker/validator pipeline. Known misses and benign literal matches remain separate from supported patterns. This supplies narrow contract evidence; representative detection evaluation, peak-memory measurement and independent assessment remain planned.
+
 History follow-up: a read-only [decision-history view](decision-history.md) now projects bounded summaries from the existing audit file. This advances visibility under step 4 without changing retention, storage, lifecycle coverage or authority. Comprehensive security history and justified integrity guarantees remain planned.
 
 Acquisition follow-up: the desktop now reads its one explicitly selected file in a fixed helper with bounded pipes, deadline/cancellation and cleanup, then analyzes the returned snapshot in the separate analyzer. This replaces the earlier in-process acquisition limitation without adding privileges or claiming atomic path confinement/OS sandboxing. Direct low-level acquisition remains synchronous for trusted callers; the desktop uses the helper.
