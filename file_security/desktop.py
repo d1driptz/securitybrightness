@@ -6,8 +6,8 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from .acquisition import FileInputError, read_selected_file
-from .worker import AnalysisUnavailable, analyze_in_worker
+from .acquisition import FileInputError
+from .worker import AnalysisUnavailable, analyze_in_worker, acquire_in_worker
 
 
 def describe_result(result):
@@ -79,7 +79,8 @@ class FileReviewPanel:
         cancel = self._cancel
         def work():
             try:
-                report = describe_result(analyze_in_worker(read_selected_file(path), cancel=cancel))
+                content = acquire_in_worker(path, cancel=cancel)
+                report = describe_result(analyze_in_worker(content, cancel=cancel))
             except (FileInputError, AnalysisUnavailable) as error:
                 report = 'No analysis conclusion is available: ' + str(error)
             except Exception:
@@ -115,8 +116,6 @@ class FileReviewPanel:
         self._cancel.set()
 
     def wait_for_cleanup(self):
-        # Used after mainloop ends. File I/O has no hard deadline, so it cannot
-        # indefinitely hold desktop shutdown; cancellation prevents a later
-        # read completion from launching a child.
+        # Used after mainloop ends. Cancellation applies to both fixed helpers.
         if self._job is not None:
             self._job.join(timeout=2.0)

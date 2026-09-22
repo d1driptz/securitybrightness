@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 import threading
+import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
@@ -34,7 +36,7 @@ class AnalysisWorkerTests(unittest.TestCase):
         if os.name == 'nt':
             self.assertEqual(options['creationflags'], subprocess.CREATE_NO_WINDOW)
 
-    def run_fault(self, code, expected, timeout=5, cancel=None):
+    def run_fault(self, code, expected, timeout=5, cancel=None, acquisition_path=None):
         real_popen = subprocess.Popen
         children = []
         def launch(args, **kwargs):
@@ -43,7 +45,10 @@ class AnalysisWorkerTests(unittest.TestCase):
             return child
         with patch.object(worker.subprocess, 'Popen', side_effect=launch):
             with self.assertRaisesRegex(worker.AnalysisUnavailable, expected):
-                worker.analyze_in_worker(b'', timeout=timeout, cancel=cancel)
+                if acquisition_path is None:
+                    worker.analyze_in_worker(b'', timeout=timeout, cancel=cancel)
+                else:
+                    worker.acquire_in_worker(acquisition_path, timeout=timeout, cancel=cancel)
         self.assertTrue(children)
         self.assertIsNotNone(children[0].poll())
         self.assertTrue(children[0].stdin.closed)
@@ -115,3 +120,43 @@ class AnalysisWorkerTests(unittest.TestCase):
             for child in children:
                 real_popen.wait(child, timeout=5)
             worker._slot.release()  # restore test isolation, not product recovery
+
+    def test_real_acquisition_returns_exact_bytes_and_fixed_rejection(self):
+        from file_security.acquisition import FileInputError
+        import_path = list(sys.path)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'selected.txt'
+            for content in [b'', b'-----BEGIN PRIVATE KEY-----\nSYNTHETIC_SECRET', b'x' * 1048576]:
+                path.write_bytes(content)
+                self.assertEqual(worker.acquire_in_worker(str(path)), content)
+            path.write_bytes(b'x' * 1048577)
+            with self.assertRaisesRegex(FileInputError, '^input_too_large$'):
+                worker.acquire_in_worker(str(path))
+            with self.assertRaisesRegex(FileInputError, '^file_unavailable$'):
+                worker.acquire_in_worker(str(Path(folder) / 'SYNTHETIC_SECRET.txt'))
+        self.assertEqual(sys.path, import_path)
+
+    def test_acquisition_timeout_and_flood_use_same_cleanup_boundary(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = str(Path(folder) / 'selected.txt')
+            self.run_fault('import time; time.sleep(30)', 'analysis_timeout', timeout=0.2, acquisition_path=path)
+            self.run_fault("import sys; sys.stdin.buffer.read(); sys.stdout.buffer.write(b'x' * 1048577); sys.stdout.buffer.flush()", 'analysis_output_limit', acquisition_path=path)
+
+    def test_selected_path_is_sent_only_on_stdin_and_cancelled_before_launch(self):
+        real_popen = subprocess.Popen
+        launches = []
+        def launch(args, **kwargs):
+            launches.append(args)
+            return real_popen(args, **kwargs)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'SYNTHETIC_SECRET.txt'
+            path.write_bytes(b'ordinary text')
+            with patch.object(worker.subprocess, 'Popen', side_effect=launch):
+                self.assertEqual(worker.acquire_in_worker(str(path)), b'ordinary text')
+            self.assertNotIn(str(path), launches[0])
+            self.assertTrue(launches[0][-1].endswith('acquisition_entry.py'))
+            cancel = threading.Event()
+            cancel.set()
+            with patch.object(worker.subprocess, 'Popen', side_effect=AssertionError('must not launch')):
+                with self.assertRaisesRegex(worker.AnalysisUnavailable, 'analysis_cancelled'):
+                    worker.acquire_in_worker(str(path), cancel=cancel)

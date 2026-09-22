@@ -6,17 +6,19 @@ import stat
 
 from .text_analysis import MAX_BYTES
 
+MAX_PATH_MESSAGE = 256 * 1024
+ACQUISITION_FAILURES = {
+    'unsupported_path': 20, 'unsupported_link': 21, 'unsupported_file': 22,
+    'input_too_large': 23, 'file_changed': 24, 'file_unavailable': 25,
+}
+
 
 class FileInputError(ValueError):
     """Fixed non-sensitive acquisition failure reason."""
 
 
-def read_selected_file(path: str) -> bytes:
-    """Return a bounded snapshot, not ongoing authority over a path.
-
-    Call only for an explicit operator selection, outside the UI thread.
-    This is not a defense against hostile same-user path replacement.
-    """
+def validate_selected_path(path: str) -> None:
+    """Validate path syntax without filesystem access."""
     if type(path) is not str or not path or len(path) > 32767 or '\x00' in path or not os.path.isabs(path):
         raise FileInputError('unsupported_path')
     if os.name == 'nt':
@@ -26,6 +28,15 @@ def read_selected_file(path: str) -> bytes:
         reserved = getattr(os.path, 'isreserved', None)
         if reserved and reserved(path):
             raise FileInputError('unsupported_path')
+
+
+def read_selected_file(path: str) -> bytes:
+    """Return a bounded snapshot, not ongoing authority over a path.
+
+    Call only for an explicit operator selection, outside the UI thread.
+    This is not a defense against hostile same-user path replacement.
+    """
+    validate_selected_path(path)
     descriptor = None
     try:
         selected = Path(path)

@@ -1,5 +1,14 @@
 # Development batches
 
+## Fixed acquisition helper and shared transport
+
+- Resumed the interrupted batch without replacing the existing desktop work. File acquisition now runs in a fixed, cancellable helper, removing filesystem reads from the desktop parent. A bounded path message goes over stdin, snapshot bytes return through a capped pipe, and fixed exit codes produce non-sensitive failures. No selected path or contents appear in process arguments.
+- Reused the analyzer's admission, deadline, cancellation, stripped environment, hidden Windows launch and cleanup implementation for the two allowlisted helpers. Analyzer output still binds to the parent's snapshot digest. No arbitrary command, sample execution, HTTP capability, file write or increased privilege was added.
+- Removed an intermediate entry-point import that would have modified the parent's import path; regression evidence checks path stability. Updated the desktop to call acquisition before analysis and corrected stale current/planned documentation.
+- Focused worker/widget/desktop suites: 20 passed in 15.451s. Full regression: 220 Python tests in 35.949s plus 8 browser-script tests in 244.1512ms (228 total), no failures/skips/Tk warnings. Existing Windows temporary-directory ACL shim used. Real-process evidence includes exact 1 MiB transfer, oversized/missing-file rejection, stalled helper timeout/reaping, output flooding, private path transport and pre-launch cancellation.
+- Reviewed the complete transport/acquisition/UI diff, failure mapping, fixed entry-point boundary, source non-disclosure and documentation. Whitespace checks passed; generated audit changes excluded. Publication is recorded by this entry's commit and branch history.
+- Limits: normal OS account privileges, non-atomic path checks, no hard real-time OS startup/kill guarantees or abrupt-parent descendant containment, no secure erasure and only three literal header patterns. The trusted acquisition helper establishes what bytes it read; a digest does not independently prove path provenance. The core remains authorization-only.
+
 ## Operator-selected desktop header review
 
 - Added a separate File Security prototype tab for explicit selection of one regular UTF-8 file up to 1 MiB. Bounded read-only acquisition checks type, existing reparse/symlink components, opened identity and size/mtime changes; the fixed worker returns validated redacted evidence. No automatic scan, directory crawl, file modification, analysis endpoint, result persistence or authority change was added.

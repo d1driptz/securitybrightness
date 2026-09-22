@@ -111,11 +111,11 @@ class FileReviewWidgetTests(unittest.TestCase):
         root, channel, window = self.make_window()
         panel = window.file_review
         try:
-            with patch('file_security.desktop.filedialog.askopenfilename', return_value=''), patch('file_security.desktop.read_selected_file') as read:
+            with patch('file_security.desktop.filedialog.askopenfilename', return_value=''), patch('file_security.desktop.acquire_in_worker') as read:
                 panel.choose.invoke()
                 read.assert_not_called()
                 self.assertFalse(panel.busy)
-            with patch('file_security.desktop.filedialog.askopenfilename', return_value='selected.txt'), patch('file_security.desktop.read_selected_file', side_effect=OSError('SYNTHETIC_SECRET')):
+            with patch('file_security.desktop.filedialog.askopenfilename', return_value='selected.txt'), patch('file_security.desktop.acquire_in_worker', side_effect=OSError('SYNTHETIC_SECRET')):
                 panel.choose.invoke()
                 report = self.wait_report(root, panel)
             self.assertIn('No analysis conclusion', report)
@@ -129,13 +129,13 @@ class FileReviewWidgetTests(unittest.TestCase):
         root, channel, window = self.make_window()
         panel = window.file_review
         entered, release = threading.Event(), threading.Event()
-        def delayed_read(path):
+        def delayed_read(path, **kwargs):
             entered.set()
             release.wait(8)
             return b'ordinary text'
         with ThreadPoolExecutor(max_workers=1) as pool:
             try:
-                with patch('file_security.desktop.filedialog.askopenfilename', return_value='selected.txt'), patch('file_security.desktop.read_selected_file', side_effect=delayed_read):
+                with patch('file_security.desktop.filedialog.askopenfilename', return_value='selected.txt'), patch('file_security.desktop.acquire_in_worker', side_effect=delayed_read):
                     panel.choose.invoke()
                     self.assertTrue(entered.wait(1))
                     self.assertTrue(panel.busy)
