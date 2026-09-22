@@ -11,7 +11,7 @@ from .json_input import loads
 MAX_HISTORY_BYTES = 4 * 1024 * 1024
 MAX_HISTORY_ROWS = 100
 _RULES = frozenset(('missing_action', 'blocked_action', 'sensitive_target',
-                    'safe_read', 'destructive_action', 'unknown_action'))
+                    'safe_read', 'change_or_execute', 'unknown_action'))
 _CONTROLS = frozenset(('automatic', 'notify', 'approval', 'strong_confirm', 'blocked'))
 
 

@@ -49,6 +49,28 @@ class HistoryTests(unittest.TestCase):
         self.assertNotIn('SYNTHETIC_SECRET', repr(snapshot))
         self.assertEqual(snapshot.records[0].decision, 'not recorded / unrecognized')
 
+    def test_every_current_policy_outcome_survives_real_decision_logging(self):
+        from core.security import process_event
+        class DenyReview:
+            def request_approval(self, event, strong=False):
+                return False
+        cases = [('', 'notes', 'missing_action'),
+                 ('disable_security', 'notes', 'blocked_action'),
+                 ('read', '.env', 'sensitive_target'),
+                 ('read', 'notes', 'safe_read'),
+                 ('write', 'notes', 'change_or_execute'),
+                 ('custom', 'notes', 'unknown_action')]
+        with tempfile.TemporaryDirectory() as folder:
+            with patch('core.logger.LOG_FILE', Path(folder) / 'audit.json'):
+                for action, target, rule in cases:
+                    with self.subTest(rule=rule):
+                        event = SecurityEvent.create('test', 'test', action, target)
+                        result = process_event(event, DenyReview())
+                        row = read_decision_history().records[0]
+                        self.assertEqual(row.policy_rule, rule)
+                        self.assertEqual(row.decision, result.decision.value)
+                        self.assertEqual(row.human_control, result.human_control)
+
     def test_missing_empty_corrupt_and_oversized_are_distinct(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'audit.json'

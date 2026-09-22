@@ -1,5 +1,12 @@
 # Development batches
 
+## Decision-history policy compatibility correction
+
+- Reassessment found that history recognized `destructive_action` instead of the policy's actual `change_or_execute` rule. Corrected the display allowlist; no policy or authority behavior changed.
+- Added a real authorization-to-log-to-history regression covering every current policy rule, including denied human review and blocked operations. Unknown rules still remain unrecognized instead of exposing free-form content.
+- Full regression: 226 Python tests in 29.691s and 8 browser tests in 67.5765ms (234 total), no failures/skips/Tk warnings; existing Windows temporary-directory ACL shim used. Reviewed the complete diff and whitespace checks. The history view retains all previously documented integrity, coverage and read-deadline limitations.
+- Publication is recorded by this entry's commit and branch history.
+
 ## Read-only desktop decision history
 
 - Added bounded immutable summaries of the existing configured audit file and an explicit-refresh desktop tab with no grant, approval, export or deletion controls. It shows at most 100 latest append-position records; unknown/legacy fields remain unknown and source data never supplies application identity.
