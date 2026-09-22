@@ -11,6 +11,8 @@ from .review_channel import OperatorReviewChannel
 from .registry import ApplicationRegistry
 from .authority_store import SQLiteAuthorityStore, AuthorityStoreError
 from .service import TOKEN_ENV, create_server
+from .history import read_decision_history
+from .history_desktop import HistoryPanel
 
 
 def display_review(review):
@@ -55,6 +57,8 @@ class ReviewWindow:
         tabs.add(applications, text="Applications")
         self.file_review = FileReviewPanel(tabs)
         tabs.add(self.file_review.frame, text="File Security prototype")
+        self.history = HistoryPanel(tabs, read_decision_history)
+        tabs.add(self.history.frame, text="Decision history")
         ttk.Label(applications, text="Registered applications", font=("Segoe UI", 16, "bold")).pack(anchor="w")
         ttk.Label(applications, text=("Stored grants start locked. Unlock only the authority you intend to enable for this session." if persistent_mode else "Session-only registry. Registrations are lost when this service stops. Scopes are not resource-specific."),
                   wraplength=730).pack(anchor="w", pady=(8, 14))
@@ -241,6 +245,7 @@ class ReviewWindow:
         if self._poll_timer is not None:
             self.root.after_cancel(self._poll_timer)
         self.file_review.close()
+        self.history.close()
         if self.authority_lock:
             self.authority_lock()
         self.channel.close()

@@ -40,6 +40,8 @@ For graphical human review, run `python -m core.desktop` instead of the terminal
 
 The desktop also has a narrow [File Security prototype](docs/file-security.md): explicitly choose one file to review three private-key header patterns. It shows redacted evidence, not a malware or safety verdict, and grants no authority.
 
+The [Decision history tab](docs/decision-history.md) offers read-only summaries of existing local authorization records. They are not tamper-proof or evidence that actions ran.
+
 ## Boundaries
 
 The default registry is in memory; [opt-in persistence](docs/persistent-authority.md) restores grants locked until explicit operator unlock. Desktop review, authority inspection, unlock and confirmed revocation are available. Review remains synchronous, audit history is not tamper-proof, and the direct Python API is for trusted callers. Expiring/resource-specific grants, OS interception and execution brokers are not implemented.

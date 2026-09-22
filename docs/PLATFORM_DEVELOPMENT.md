@@ -27,9 +27,11 @@ At the inspection baseline, gaps included synchronous request blocking, partial 
 
 ## Dependency-based development sequence
 
+History follow-up: a read-only [decision-history view](decision-history.md) now projects bounded summaries from the existing audit file. This advances visibility under step 4 without changing retention, storage, lifecycle coverage or authority. Comprehensive security history and justified integrity guarantees remain planned.
+
 Acquisition follow-up: the desktop now reads its one explicitly selected file in a fixed helper with bounded pipes, deadline/cancellation and cleanup, then analyzes the returned snapshot in the separate analyzer. This replaces the earlier in-process acquisition limitation without adding privileges or claiming atomic path confinement/OS sandboxing. Direct low-level acquisition remains synchronous for trusted callers; the desktop uses the helper.
 
-The desktop now offers explicit selection of one regular file for three supported private-key-header patterns. It uses bounded helpers and redacted evidence, with no authority objects passed to processing. Broader detection, stronger OS isolation, history, device monitoring and the assistant remain planned. See [the contract guide](file-security.md) for current behavior and limits.
+The desktop now offers explicit selection of one regular file for three supported private-key-header patterns. It uses bounded helpers and redacted evidence, with no authority objects passed to processing. Broader detection, stronger OS isolation, comprehensive security history, device monitoring and the assistant remain planned. See [the contract guide](file-security.md) for current behavior and limits.
 
 The first scanner correction batch removes the content exclusion, preserves original locations, withholds matched values, counts every rule occurrence while retaining at most five locations per group, and repairs dismissal without claiming remediation. Selection is limited to .txt/.log/.js files up to 1 MiB; oversized decoded content and NUL-containing content are rejected. Older asynchronous read callbacks cannot overwrite a newer scan. Private-key headers now match at ordinary line starts. Timing includes reading and analysis; the page describes heuristic review rather than an AI or malware verdict.
 

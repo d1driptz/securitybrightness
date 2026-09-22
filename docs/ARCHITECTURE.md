@@ -61,6 +61,8 @@ The independent [File Security contract](file-security.md) in `file_security/tex
 
 `file_security.worker` runs only the two packaged helpers: operator-selected regular-file acquisition and supplied-byte analysis. They share bounded nonblocking transport, deadlines, cancellation and cleanup; analyzer results undergo strict validation. Neither receives core credentials or approval callbacks. Separate processes improve availability handling but retain the same OS privileges: no hostile-process sandbox, human authentication or enforcement authority is introduced. Desktop acquisition now uses its helper deadline rather than filesystem I/O inside the parent; OS startup/kill guarantees remain limited. The authorization core still does not execute proposed actions.
 
+Current history implementation: [decision-history.md](decision-history.md) describes `core.history` and the desktop's read-only snapshot panel. It projects bounded known fields from the existing configured audit file, coordinates reads with the logger, and grants no mutation or approval authority. This is not the planned comprehensive integrity-protected security history.
+
 ## Planned architecture: intended responsibilities, not implemented modules
 
 ```text

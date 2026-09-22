@@ -1,5 +1,13 @@
 # Development batches
 
+## Read-only desktop decision history
+
+- Added bounded immutable summaries of the existing configured audit file and an explicit-refresh desktop tab with no grant, approval, export or deletion controls. It shows at most 100 latest append-position records; unknown/legacy fields remain unknown and source data never supplies application identity.
+- Omitted targets, details, raw reasons and source strings, escaped application identifiers, distinguished missing/empty/unavailable history, and cleared stale results on refresh/failure. Parsing uses strict JSON and a 4 MiB input cap; read coordination reuses the logger's lock without changing writes or retention.
+- Focused history/desktop/file-review suites: 13 passed in 2.730s. Final regression: 225 Python tests in 30.637s plus 8 browser tests in 158.9928ms (233 total), no failures/skips/Tk warnings. Existing Windows temporary-directory ACL shim used. Tests cover actual audit round trips without mutation, immutable/minimized output, legacy/unknown records, limits, corrupt/missing/empty/busy/error handling and actual widget refresh/escaping/closure.
+- Reviewed read-only authority boundaries, field projection, stale/error behavior, UI lifecycle and compatibility. Documentation separates these summaries from execution evidence, current grants and authenticated provenance. Whitespace checks passed and generated audit changes excluded. Publication is recorded by this entry's commit and branch history.
+- Limits: unsigned local logs, incomplete lifecycle/failure/analysis coverage, identifiers may remain sensitive, no semantic secret guarantee, no filesystem read deadline, and potential writer delay while the configured file is read. This is visibility into existing records, not comprehensive security history or tamper-proof evidence.
+
 ## Fixed acquisition helper and shared transport
 
 - Resumed the interrupted batch without replacing the existing desktop work. File acquisition now runs in a fixed, cancellable helper, removing filesystem reads from the desktop parent. A bounded path message goes over stdin, snapshot bytes return through a capped pipe, and fixed exit codes produce non-sensitive failures. No selected path or contents appear in process arguments.

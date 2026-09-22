@@ -22,6 +22,8 @@ The registry supplies immutable credential-free summaries. The UI receives speci
 
 ## Boundary and replacement path
 
+Decision history provides [read-only local audit summaries](decision-history.md) through an explicit Refresh button. Missing/unavailable history is distinguished from an empty valid log. Free-form targets/details/reasons are withheld; records are not proof of execution, current authority or strong human identity. The tab has no permission or approval controls.
+
 The File Security prototype tab provides a separate [private-key-header review](file-security.md) for one explicitly selected regular UTF-8 file up to 1 MiB. It is not a malware scan or permission decision. Reading and analysis run in fixed helpers with separate timeout/cancellation handling; an arriving authorization review still takes priority. Results show redacted locations, a snapshot digest and limitations. Neither helper receives application/admin credentials, registry or approval channel. No scan happens automatically and no file is modified. Closing cancels processing; OS startup/kill limitations and the absence of strong sandboxing remain explicit in the guide.
 
 The trusted desktop main thread owns the review interface; the existing HTTP service runs on a worker. OperatorReviewChannel implements the existing approval-provider contract and carries immutable credential-free ReviewRequest messages. Each response names a fresh pending review ID; wrong, expired or already answered IDs cannot approve another request. Strong confirmation is checked in the channel as well as requested by the UI.
