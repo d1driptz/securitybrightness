@@ -7,7 +7,7 @@ import json
 from dataclasses import dataclass, field
 
 from .json_input import loads as strict_json_loads
-from .proposal import MAX_MESSAGE_BYTES
+from .proposal import MAX_MESSAGE_BYTES\nfrom .protocol_identifiers import protocol_identifier
 from .scopes import normalize_scopes
 from .validation import application_id as validate_application_id
 

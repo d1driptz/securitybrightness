@@ -7,7 +7,7 @@ import json
 from dataclasses import dataclass, field
 
 from .json_input import loads as strict_json_loads
-from .proposal import MAX_MESSAGE_BYTES
+from .proposal import MAX_MESSAGE_BYTES\nfrom .protocol_identifiers import protocol_identifier
 
 _AUTHORITY_KEYS = frozenset({
     "application_id", "authenticated", "trust", "trusted", "granted_scopes",
@@ -45,7 +45,7 @@ def _resource(resource):
     if {"type", "reference"} - set(resource):
         raise ValueError("resource requires type and reference")
     result = {
-        "type": _normalized_text(resource["type"], "resource type").lower(),
+        "type": protocol_identifier(resource["type"], "resource type"),
         "reference": _normalized_text(resource["reference"], "resource reference"),
     }
     if "attributes" in resource:
@@ -63,7 +63,7 @@ class StructuredActionProposal:
     _body: bytes = field(repr=False)
 
     def __init__(self, operation, resources, *, effects=None, requester_context=None):
-        operation = _normalized_text(operation, "operation").lower()
+        operation = protocol_identifier(operation, "operation")
         if not isinstance(resources, (list, tuple)) or not resources:
             raise ValueError("resources must be a nonempty list or tuple")
         normalized_resources = [_resource(item) for item in resources]
