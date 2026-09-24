@@ -149,3 +149,11 @@ The HTTP request and response contracts are unchanged. Audit records for context
 Trusted Python approval providers should use event.authorization_context (when present), identify(event) and check_scope(event), rather than assume authentication fields live in details. AuthorizationContext.apply remains a legacy adapter and existing no-context trusted Python calls retain legacy detail-field behavior. Neither an internal context object nor an in-process provider is a security boundary against hostile Python code.
 
 The Applications tab displays immutable credential-free summaries: identity, trust, scopes, stored/active state, grant version, creation/change timestamps, lifetime and expiry placeholder. It supports confirmed exact-version unlock and revocation, plus locking all persisted authority. No HTTP unlock endpoint exists. See [persistent authority](persistent-authority.md) for inactive startup, failure behavior and the opt-in restriction on admin-token-only checks. Timestamp expiry and one-shot grants remain unsupported and fail closed if found in a stored record.
+
+## Structured authority development (not active authorization)
+
+The repository now contains an isolated draft `StructuredActionProposal`, stable proposal identity helper, and inert `ConstrainedAuthority` data model. These are development primitives only. The local service, SDK and permission engine do **not** consume them, so they do not grant, narrow, cache or execute authority and do not change the v1 `action/target/details` contract.
+
+The structured proposal snapshots operation, typed resource references, material effects and untrusted requester context. Its stable identity changes when the canonical snapshot changes; that identity is not a signature, credential, approval or execution receipt. The constrained-authority model currently accepts only explicitly supported `session` / `unlimited` semantics and fails closed for proposed expiry/one-shot/persistent modes. Resource references remain descriptive until a controlled enforcement point can establish the identity of the real resource.
+
+See [decision 0003](decisions/0003-structured-proposals-and-constrained-authority.md) for the migration and enforcement requirements.
