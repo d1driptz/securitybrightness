@@ -37,7 +37,7 @@ class StructuredProposalTests(unittest.TestCase):
     def test_authority_fields_are_rejected_recursively(self):
         cases = [
             {"effects": {"approved": True}},
-            {"effects": {"nested": {"granted_scopes": ["all"]}}},
+            {"effects": {"nested": {"granted_scopes": ["all"]}}},\n            {"effects": {"nested": ({"approved": True},)}},
             {"requester_context": {"authorization": "caller-value"}},
             {"resources": [{"type": "file", "reference": "x",
                             "attributes": {"application_id": "caller"}}]},
@@ -58,7 +58,7 @@ class StructuredProposalTests(unittest.TestCase):
             [{"type": "file", "reference": " "}],
             [{"type": "file", "reference": "x", "extra": True}],
             [{"type": "file", "reference": "x", "attributes": []}],
-            ["file:x"],
+            ["file:x"],\n            [{1: "bad-key", "type": "file", "reference": "x"}],
         ]
         for resources in invalid:
             with self.subTest(resources=resources), self.assertRaises((TypeError, ValueError)):
