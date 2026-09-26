@@ -7,8 +7,8 @@ import json
 from dataclasses import dataclass, field
 
 from .json_input import loads as strict_json_loads
-from .proposal import MAX_MESSAGE_BYTES\nfrom .protocol_identifiers import protocol_identifier
-from .scopes import normalize_scopes
+from .proposal import MAX_MESSAGE_BYTES
+from .protocol_identifiers import protocol_identifier
 from .validation import application_id as validate_application_id
 
 _ALLOWED_LIFETIMES = frozenset({"session"})
@@ -18,10 +18,9 @@ _ALLOWED_USES = frozenset({"unlimited"})
 def _text(value, name, *, lower=False):
     if not isinstance(value, str):
         raise TypeError(f"{name} must be a string")
-    value = value.strip()
-    if not value:
+    if not value.strip():
         raise ValueError(f"{name} must be nonempty")
-    return value.lower() if lower else value
+    return value.strip().lower() if lower else value
 
 
 @dataclass(frozen=True, init=False)
@@ -38,8 +37,8 @@ class ConstrainedAuthority:
     def __init__(self, application_id, operation, resource_type, resource_reference,
                  *, lifetime="session", uses="unlimited"):
         application_id = validate_application_id(application_id)
-        operation = _text(operation, "operation", lower=True)
-        resource_type = _text(resource_type, "resource_type", lower=True)
+        operation = protocol_identifier(operation, "operation")
+        resource_type = protocol_identifier(resource_type, "resource_type")
         resource_reference = _text(resource_reference, "resource_reference")
         lifetime = _text(lifetime, "lifetime", lower=True)
         uses = _text(uses, "uses", lower=True)
@@ -47,8 +46,6 @@ class ConstrainedAuthority:
             raise ValueError("unsupported authority lifetime")
         if uses not in _ALLOWED_USES:
             raise ValueError("unsupported authority use-count mode")
-        # Reuse scope validation rules for operation vocabulary without implying a grant.
-        normalize_scopes([operation])
         payload = {
             "version": 1,
             "application_id": application_id,

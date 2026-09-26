@@ -1,4 +1,4 @@
-# Structured proposal and constrained authority — design gate
+# Structured proposal and constrained authority - design gate
 
 Status: PROPOSED. This decision records the contract that must be settled before changing authorization semantics. It does not grant new authority, change the HTTP schema, or add execution.
 
@@ -74,8 +74,12 @@ File access is the preferred first candidate because it can be kept narrow and l
 
 ## Explicitly deferred
 
-This proposal does not choose a hash/signature algorithm, Windows broker architecture, OS credential store, asynchronous approval API, payment schema, human identity mechanism, policy language, or general-purpose executor. Those require separate decisions and evidence.
+The isolated snapshot prototype uses SHA-256 for content identity, not signatures or capabilities. This proposal does not choose a signature algorithm, Windows broker architecture, OS credential store, asynchronous approval API, payment schema, human identity mechanism, policy language, or general-purpose executor. Those require separate decisions and evidence.
 
 ## Acceptance evidence for implementation
 
 Tests for the eventual v2 contract must cover deterministic canonicalization, nested mutation isolation, unknown/duplicate fields, type confusion, Unicode/normalization ambiguity, oversized/deep data, material-effect changes, replay attempts and v1 compatibility. Enforcement tests must demonstrate that a denied or mismatched proposal cannot complete through the protected path.
+
+## Review gate before an enforcement prototype
+
+The isolated draft now preserves exact resource-reference text and rejects unsupported material effects during constraint applicability checks. A content hash plus a caller-constructible allow binding remains insufficient for execution. Keep v1 unchanged until a narrow operation-specific schema, authenticated decision issuer, application binding, revocation/final revalidation and replay policy are implemented and reviewed. File-path identity and replacement/link races remain unresolved; no protected file-access path is claimed by these primitives.

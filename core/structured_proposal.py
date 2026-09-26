@@ -7,7 +7,8 @@ import json
 from dataclasses import dataclass, field
 
 from .json_input import loads as strict_json_loads
-from .proposal import MAX_MESSAGE_BYTES\nfrom .protocol_identifiers import protocol_identifier
+from .proposal import MAX_MESSAGE_BYTES
+from .protocol_identifiers import protocol_identifier
 
 _AUTHORITY_KEYS = frozenset({
     "application_id", "authenticated", "trust", "trusted", "granted_scopes",
@@ -16,13 +17,26 @@ _AUTHORITY_KEYS = frozenset({
 _RESOURCE_FIELDS = frozenset({"type", "reference", "attributes"})
 
 
-def _normalized_text(value, name):
+def _reference_text(value, name):
     if not isinstance(value, str):
         raise TypeError(f"{name} must be a string")
-    value = value.strip()
-    if not value:
+    if not value.strip():
         raise ValueError(f"{name} must be nonempty")
     return value
+
+
+def _validate_json_input(value, depth=0):
+    # Validate before encoding: JSON otherwise silently coerces non-string keys.
+    if depth > 32:
+        raise ValueError("proposal nesting is too deep")
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ValueError("proposal object keys must be strings")
+            _validate_json_input(item, depth + 1)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            _validate_json_input(item, depth + 1)
 
 
 def _contains_authority_key(value):
@@ -46,7 +60,7 @@ def _resource(resource):
         raise ValueError("resource requires type and reference")
     result = {
         "type": protocol_identifier(resource["type"], "resource type"),
-        "reference": _normalized_text(resource["reference"], "resource reference"),
+        "reference": _reference_text(resource["reference"], "resource reference"),
     }
     if "attributes" in resource:
         if not isinstance(resource["attributes"], dict):
@@ -80,12 +94,13 @@ class StructuredActionProposal:
             "effects": effects,
             "requester_context": requester_context,
         }
-        if _contains_authority_key(payload):
-            raise ValueError("proposal data must not contain authority fields")
         try:
+            _validate_json_input(payload)
             body = json.dumps(payload, allow_nan=False, ensure_ascii=True,
                               sort_keys=True, separators=(",", ":")).encode("utf-8")
-            strict_json_loads(body.decode("utf-8"))
+            snapshot = strict_json_loads(body.decode("utf-8"))
+            if _contains_authority_key(snapshot):
+                raise ValueError("proposal data must not contain authority fields")
         except (TypeError, ValueError, RecursionError):
             raise ValueError("proposal must contain finite UTF-8 JSON values within the nesting limit") from None
         if len(body) > MAX_MESSAGE_BYTES:

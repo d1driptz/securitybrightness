@@ -157,3 +157,13 @@ The repository now contains an isolated draft `StructuredActionProposal`, stable
 The structured proposal snapshots operation, typed resource references, material effects and untrusted requester context. Its stable identity changes when the canonical snapshot changes; that identity is not a signature, credential, approval or execution receipt. The constrained-authority model currently accepts only explicitly supported `session` / `unlimited` semantics and fails closed for proposed expiry/one-shot/persistent modes. Resource references remain descriptive until a controlled enforcement point can establish the identity of the real resource.
 
 See [decision 0003](decisions/0003-structured-proposals-and-constrained-authority.md) for the migration and enforcement requirements.
+
+### Reviewed draft boundaries
+
+Structured operation/resource-type labels reject non-ASCII input before case normalization. Resource references retain their exact text, including surrounding whitespace: descriptive references are not normalized filesystem identities. JSON object keys must be strings; cyclic/deep data and authority fields nested inside tuple/list containers are rejected before a snapshot is accepted.
+
+Constraint matching and application applicability are inspection results, never permission. Both reject implicit boolean conversion. The current constraint schema has no effect or resource-attribute predicates, so nonempty effects/attributes make a proposal inapplicable rather than being silently ignored. Requester context remains untrusted explanation. The application ID supplied to the pure evaluator is not authenticated by that helper.
+
+Decision bindings validate the v2 identity format and refer to the complete canonical snapshot, including effects and requester context. Anyone with Python access can construct an allow binding; it is not evidence of human approval, authenticated issuer, expiry, revocation, or replay protection. These primitives must not be wired directly into execution.
+
+Legacy action migration uses an explicit fixed mapping. Adding an action to the v1 catalog does not automatically give it a structured mapping. Existing v1 service, SDK, policy and registry behavior is unchanged.

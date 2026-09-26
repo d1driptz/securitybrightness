@@ -3,9 +3,10 @@
 A binding records which immutable proposal snapshot a decision refers to.
 It is not an authorization token and does not execute or grant anything.
 """
+import re
 from dataclasses import dataclass
 
-from .proposal_identity import proposal_identity
+from .proposal_identity import PROPOSAL_ID_PREFIX, proposal_identity
 from .structured_proposal import StructuredActionProposal
 
 
@@ -15,8 +16,9 @@ class ProposalDecisionBinding:
     decision: str
 
     def __post_init__(self):
-        if not isinstance(self.proposal_id, str) or not self.proposal_id:
-            raise ValueError("proposal_id must be nonempty")
+        if (not isinstance(self.proposal_id, str) or
+                re.fullmatch(re.escape(PROPOSAL_ID_PREFIX) + r"[0-9a-f]{64}", self.proposal_id) is None):
+            raise ValueError("proposal_id must be a canonical v2 SHA-256 identity")
         if self.decision not in {"allow", "deny"}:
             raise ValueError("decision must be allow or deny")
 

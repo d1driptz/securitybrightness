@@ -11,6 +11,8 @@ _IDENTIFIER = re.compile(r"^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$")
 def protocol_identifier(value, name):
     if not isinstance(value, str):
         raise TypeError(f"{name} must be a string")
+    if not value.isascii():
+        raise ValueError(f"{name} must be ASCII before normalization")
     value = value.strip().lower()
     if not value:
         raise ValueError(f"{name} must be nonempty")

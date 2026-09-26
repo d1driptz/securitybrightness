@@ -14,6 +14,9 @@ class ConstraintMatch:
     matches: bool
     reason: str
 
+    def __bool__(self):
+        raise TypeError("Use result.matches explicitly; matching is not permission")
+
 
 def matches_constraint(proposal, authority):
     if not isinstance(proposal, StructuredActionProposal):
@@ -32,4 +35,8 @@ def matches_constraint(proposal, authority):
         return ConstraintMatch(False, "resource_type_mismatch")
     if resource["reference"] != authority.resource_reference:
         return ConstraintMatch(False, "resource_reference_mismatch")
+    if resource.get("attributes"):
+        return ConstraintMatch(False, "unsupported_resource_attributes")
+    if payload["effects"]:
+        return ConstraintMatch(False, "unsupported_effects")
     return ConstraintMatch(True, "exact_constraint_match")
