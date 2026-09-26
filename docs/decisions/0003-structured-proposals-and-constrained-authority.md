@@ -83,3 +83,7 @@ Tests for the eventual v2 contract must cover deterministic canonicalization, ne
 ## Review gate before an enforcement prototype
 
 The isolated draft now preserves exact resource-reference text and rejects unsupported material effects during constraint applicability checks. A content hash plus a caller-constructible allow binding remains insufficient for execution. Keep v1 unchanged until a narrow operation-specific schema, authenticated decision issuer, application binding, revocation/final revalidation and replay policy are implemented and reviewed. File-path identity and replacement/link races remain unresolved; no protected file-access path is claimed by these primitives.
+
+## Step 4 draft implementation
+
+The first operation-specific schema is [file_read.v1](../file-read-proposals.md), implemented as pure construction/inspection helpers. Its explicit whole-file byte limit and requesting-application recipient are proposal data, not authority. Effect-aware constrained grants and real resource provenance remain subsequent work; the generic constraint evaluator continues to reject these effects. This advances the schema milestone without activating v2 in the service or changing human authority.

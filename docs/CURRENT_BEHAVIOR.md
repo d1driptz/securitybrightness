@@ -167,3 +167,7 @@ Constraint matching and application applicability are inspection results, never 
 Decision bindings validate the v2 identity format and refer to the complete canonical snapshot, including effects and requester context. Anyone with Python access can construct an allow binding; it is not evidence of human approval, authenticated issuer, expiry, revocation, or replay protection. These primitives must not be wired directly into execution.
 
 Legacy action migration uses an explicit fixed mapping. Adding an action to the v1 catalog does not automatically give it a structured mapping. Existing v1 service, SDK, policy and registry behavior is unchanged.
+
+### Narrow file-read schema (inactive)
+
+`core.file_read_schema` now builds and inspects a `file_read.v1` proposal: one descriptive file reference, a required integer whole-file limit of 1 through 1,048,576 bytes, and the explicit recipient `requesting_application`. Missing/unknown effects, attributes, other operations and implicit v1 migration are rejected. It performs no file access and grants no authority; existing inert constraints still reject its effects. See [the file-read contract](file-read-proposals.md) for exact semantics and remaining enforcement gates.
