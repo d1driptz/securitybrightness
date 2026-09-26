@@ -171,3 +171,7 @@ Legacy action migration uses an explicit fixed mapping. Adding an action to the 
 ### Narrow file-read schema (inactive)
 
 `core.file_read_schema` now builds and inspects a `file_read.v1` proposal: one descriptive file reference, a required integer whole-file limit of 1 through 1,048,576 bytes, and the explicit recipient `requesting_application`. Missing/unknown effects, attributes, other operations and implicit v1 migration are rejected. It performs no file access and grants no authority; existing inert constraints still reject its effects. See [the file-read contract](file-read-proposals.md) for exact semantics and remaining enforcement gates.
+
+### Effect-aware file-read constraints (inactive)
+
+A separate `FileReadConstraint` and explicit evaluator now compare an owner, exact descriptive reference and byte ceiling against the strict file-read schema. Applicability is not permission; these helpers neither authenticate identity nor consult active grants, policy, human approval or the filesystem. The generic evaluator remains unchanged. Session/unlimited labels remain metadata, with no implemented lifetime, revocation or replay machinery. See [file-read constraints](file-read-constraints.md) for tested invariants and activation gates.

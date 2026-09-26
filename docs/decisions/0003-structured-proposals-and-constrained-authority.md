@@ -87,3 +87,7 @@ The isolated draft now preserves exact resource-reference text and rejects unsup
 ## Step 4 draft implementation
 
 The first operation-specific schema is [file_read.v1](../file-read-proposals.md), implemented as pure construction/inspection helpers. Its explicit whole-file byte limit and requesting-application recipient are proposal data, not authority. Effect-aware constrained grants and real resource provenance remain subsequent work; the generic constraint evaluator continues to reject these effects. This advances the schema milestone without activating v2 in the service or changing human authority.
+
+## Step 5 preparatory implementation
+
+The separate [effect-aware file-read constraint draft](../file-read-constraints.md) adds pure owner/reference/byte-ceiling applicability checks. It does not complete step 5: authoritative grant issuance, persistence, activation, revocation, version and lifetime semantics remain unimplemented for these structured constraints. No live authorization or enforcement path consumes this draft.
