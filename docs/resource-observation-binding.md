@@ -1,6 +1,6 @@
 # Adapter observations and downstream operation binding (inactive model)
 
-This stage structurally separates requester intent from adapter-originated resource reports. `core.resource_binding` is a pure in-memory contract model with synthetic test reports. It performs no Windows calls, acquires no handles, verifies no resources, evaluates no authority and executes nothing. It is not consumed by `/check` or any file reader. The trusted resource identity gate remains OPEN.
+This stage structurally separates requester intent from adapter-originated resource reports. `core.resource_binding` is a pure in-memory contract model with synthetic test reports. It performs no Windows calls, acquires no handles, verifies no resources, evaluates no authority and executes nothing. It is not consumed by `/check` or any file reader. The complete trusted resource identity gate remains OPEN. A separate inactive [Windows metadata collector](windows-resource-identity.md) now substantiates a narrow retained-handle profile; this module remains only a supplied-report model.
 
 ## Separate data channels
 
@@ -11,7 +11,7 @@ This stage structurally separates requester intent from adapter-originated resou
 | Operation binding | Association between application, complete proposal identity, observation lifetime and byte limit | Exact locally issued binding; inspection only, not permission |
 | Human/authority decision | SecurityBrightness-controlled policy and required human control | Not produced or consumed by this model; remains a separate gate |
 
-Requester context is never deserialized into an observation. A caller-constructed or copied observation is not recognized by a session, even if its fields match. Application ID validation is syntax only, not authentication. The trusted Python adapter caller can still fabricate a report: process isolation and a genuine observation collector are not implemented. Constructing a typed object does not confer trust.
+Requester context is never deserialized into an observation. A caller-constructed or copied observation is not recognized by a session, even if its fields match. Application ID validation is syntax only, not authentication. The trusted Python adapter caller can still fabricate a report: process isolation is not implemented. The separate Windows collector issues observations from OS metadata; this model still accepts trusted caller reports. Constructing a typed object does not confer trust.
 
 The observation stores volume serial, 128-bit file ID, size, change-time value, and a display path in a distinct session/observation lifetime. Only the explicit draft profile `local_ntfs`, `regular`, `excluded` reparse status is accepted. These labels are required reports, NOT facts established by this module. Unknown/network/nonregular/reparse profiles fail validation. Unknown metadata must not be replaced by fabricated zero/default values by a future collector.
 
@@ -25,7 +25,7 @@ Release invalidates the observation and its binding. Replacement retires the old
 
 Inspection results reject boolean conversion. A match cannot prove authority, human approval, content immutability, or real-resource truth. Repeated matching does not consume an operation and does not implement execution replay prevention. A previously returned match can become stale immediately. A generic proposal-only decision binding does not cover the observation and must not be promoted into an operation authorization.
 
-## Windows collection and race design requirements (not implemented)
+## Windows collection and race design requirements
 
 Microsoft documents handle-derived volume/file identifiers for comparing open handles. The proposed collector should obtain `FILE_ID_INFO` from the retained handle; it must not manufacture identity from a path. See [FILE_ID_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info).
 
@@ -48,6 +48,6 @@ Size and change time are inconsistency signals, not cryptographic content identi
 5. The adapter acts only on that retained exact resource, within the approved effects. It never reopens a path supplied by the requester and never delegates arbitrary commands.
 6. A controlled integration must demonstrate denial/error/stale/replayed/mismatched requests prevent the real operation through the protected path, with no partial data release or fallback. Direct access outside that path must not be described as covered.
 
-None of steps 2 through 6 is established by these primitives. SecurityBrightness remains the authorization boundary, not a general executor or antivirus. Active authorization and enforcement must wait for these gates and their tests.
+The separate collector implements part of step 2 for its narrow profile. None of steps 3 through 6, nor the trusted acquisition boundary of step 2, is established by these primitives. SecurityBrightness remains the authorization boundary, not a general executor or antivirus. Active authorization and enforcement must wait for these gates and their tests.
 
 Session closure irreversibly retires all model evidence. Display labels are bounded to 32,767 UTF-16 code units, not merely Python code points. Resource matching deliberately remains independent of registry state; it must never substitute for current authority validation.

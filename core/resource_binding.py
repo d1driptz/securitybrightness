@@ -75,7 +75,7 @@ class AdapterObservationSession:
                            display_path, filesystem, file_kind, reparse_status):
         """Record a supplied adapter report, not a verified OS observation.
 
-        Only a future collector may substantiate the explicit local-NTFS,
+        A separate trusted collector must substantiate the explicit local-NTFS,
         regular-file, no-reparse profile. This routine does not check a path.
         """
         _uint64(volume_serial, "volume_serial")
