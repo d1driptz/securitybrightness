@@ -175,3 +175,7 @@ Legacy action migration uses an explicit fixed mapping. Adding an action to the 
 ### Effect-aware file-read constraints (inactive)
 
 A separate `FileReadConstraint` and explicit evaluator now compare an owner, exact descriptive reference and byte ceiling against the strict file-read schema. Applicability is not permission; these helpers neither authenticate identity nor consult active grants, policy, human approval or the filesystem. The generic evaluator remains unchanged. Session/unlimited labels remain metadata, with no implemented lifetime, revocation or replay machinery. See [file-read constraints](file-read-constraints.md) for tested invariants and activation gates.
+
+### Draft review lifecycle (inactive)
+
+`FileReadReviewLedger` provides bounded session-local constraint drafts, expected-revision replacement, terminal draft revocation and exact-proposal review freshness. It has no human-decision or activation operation. Superseded, copied, changed or cross-session review tickets do not remain current. No live authorization path consumes it, and freshness is neither permission nor atomic enforcement. See [draft review lifecycle](file-read-review-lifecycle.md) for invariants and unresolved authority gates.

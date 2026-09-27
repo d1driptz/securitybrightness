@@ -91,3 +91,7 @@ The first operation-specific schema is [file_read.v1](../file-read-proposals.md)
 ## Step 5 preparatory implementation
 
 The separate [effect-aware file-read constraint draft](../file-read-constraints.md) adds pure owner/reference/byte-ceiling applicability checks. It does not complete step 5: authoritative grant issuance, persistence, activation, revocation, version and lifetime semantics remain unimplemented for these structured constraints. No live authorization or enforcement path consumes this draft.
+
+## Step 5 draft-review versioning prototype
+
+The isolated [draft review ledger](../file-read-review-lifecycle.md) tests expected-revision updates, terminal draft revocation and stale exact-proposal review detection. This deliberately stops before active grants: no reviewer authentication, human decision, activation, persistence, expiration, authority replay consumption or protected operation exists. A current review is only point-in-time inspection evidence, not an execution lease.
