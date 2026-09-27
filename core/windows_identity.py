@@ -105,6 +105,15 @@ class _Native:
             raise ResourceIdentityError("resource_unavailable")
         return handle
 
+    def verify_volume_root(self, handle):
+        # Reject drive aliases resolving inside a directory (for example SUBST).
+        # This checks traversal policy only; the string is never a file identity.
+        buffer = c.create_unicode_buffer(128)
+        count = self.k.GetFinalPathNameByHandleW(handle, buffer, len(buffer), 1)  # VOLUME_NAME_GUID
+        if (not count or count >= len(buffer)
+                or not re.fullmatch(r"\\\\\?\\Volume\{[0-9a-fA-F-]{36}\}\\", buffer.value)):
+            raise ResourceIdentityError("unsupported_volume_root")
+
     def child(self, parent, name, directory):
         buffer = c.create_unicode_buffer(name)
         length = len(name.encode("utf-16-le"))
@@ -200,6 +209,7 @@ class WindowsIdentityCollector:
             observation = None
             try:
                 handles.append(self._native.root(root))
+                self._native.verify_volume_root(handles[0])
                 self._native.local_ntfs(handles[0])
                 for name in parts:
                     parent_ids.append(self._native.metadata(handles[-1], True)[:2])

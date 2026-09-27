@@ -344,6 +344,20 @@ class WindowsIdentityTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 WindowsIdentityCollector(capacity=capacity)
 
+    def test_drive_alias_to_subdirectory_is_not_an_accepted_traversal_root(self):
+        accepted = r'\\?\Volume{12345678-1234-1234-1234-123456789abc}' + '\\'
+        for label in [accepted, accepted + 'alias' + '\\', 'C:\\', 'unavailable']:
+            def final_name(handle, buffer, size, flags):
+                self.assertEqual(flags, 1)
+                buffer.value = label
+                return len(label)
+            with patch.object(self.adapter._native.k, 'GetFinalPathNameByHandleW', side_effect=final_name):
+                if label == accepted:
+                    self.adapter._native.verify_volume_root(1)
+                else:
+                    with self.assertRaises(ResourceIdentityError):
+                        self.adapter._native.verify_volume_root(1)
+
 
 if __name__ == '__main__':
     unittest.main()

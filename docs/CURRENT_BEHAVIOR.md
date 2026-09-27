@@ -191,3 +191,7 @@ An isolated coordinator now binds draft-review freshness to an authenticated exi
 ### Windows metadata identity (inactive)
 
 A separate `WindowsIdentityCollector` now obtains OS file identity through retained metadata-only handles on a narrow local-NTFS profile. It rejects ambiguous namespaces, reparse traversal, hard links, unsupported case policies and incomplete queries, and binds only its own live observations. Synthetic Windows fixture tests cover aliases, races, replacement, mutation and cleanup. Attributes-only sharing does not establish content stability; neither metadata matching nor timestamps confer permission. No content reads or `/check` integration are added. See [Windows resource identity](windows-resource-identity.md) for tested scope and remaining gates.
+
+### Combined resource review envelope (inactive)
+
+`ResourceReviewEnvelopes` pairs exact registry/draft evidence with the collector-owned resource observation and operation binding. It catches review/registry changes across resource validation, rejects foreign/copied/transferred evidence, and retires stale samples. It records no human approval and may be current for an application without granted scopes. Repeated freshness inspection is not atomic authorization or one-use execution. See [resource review envelopes and the first experiment decision](resource-review-envelopes.md).
