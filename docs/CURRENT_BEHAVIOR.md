@@ -179,3 +179,7 @@ A separate `FileReadConstraint` and explicit evaluator now compare an owner, exa
 ### Draft review lifecycle (inactive)
 
 `FileReadReviewLedger` provides bounded session-local constraint drafts, expected-revision replacement, terminal draft revocation and exact-proposal review freshness. It has no human-decision or activation operation. Superseded, copied, changed or cross-session review tickets do not remain current. No live authorization path consumes it, and freshness is neither permission nor atomic enforcement. See [draft review lifecycle](file-read-review-lifecycle.md) for invariants and unresolved authority gates.
+
+### Registry-bound review freshness (inactive)
+
+An isolated coordinator now binds draft-review freshness to an authenticated existing application and its registry activation lease. Rotation, permission/version changes, revocation, persistent lock/re-unlock and registry unavailability invalidate old review evidence. It performs no policy/scope authorization, grants no authority and is not consumed by `/check`. A current result may exist for an authenticated application with no scopes; it must never be treated as permission. See [registry-bound review](registry-bound-review.md) for tested invariants and the remaining gate matrix.

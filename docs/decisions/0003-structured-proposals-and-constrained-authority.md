@@ -95,3 +95,7 @@ The separate [effect-aware file-read constraint draft](../file-read-constraints.
 ## Step 5 draft-review versioning prototype
 
 The isolated [draft review ledger](../file-read-review-lifecycle.md) tests expected-revision updates, terminal draft revocation and stale exact-proposal review detection. This deliberately stops before active grants: no reviewer authentication, human decision, activation, persistence, expiration, authority replay consumption or protected operation exists. A current review is only point-in-time inspection evidence, not an execution lease.
+
+## Registry lifecycle binding prerequisite
+
+[Registry-bound review evidence](../registry-bound-review.md) composes the existing authenticated application snapshot/activation lease with the inactive draft ledger. This tests invalidation on registry changes without activating structured authorization. Trusted human decisions, approved constrained-grant issuance, resource identity, final operation binding and enforcement replay handling remain explicit gates.
