@@ -99,3 +99,7 @@ The isolated [draft review ledger](../file-read-review-lifecycle.md) tests expec
 ## Registry lifecycle binding prerequisite
 
 [Registry-bound review evidence](../registry-bound-review.md) composes the existing authenticated application snapshot/activation lease with the inactive draft ledger. This tests invalidation on registry changes without activating structured authorization. Trusted human decisions, approved constrained-grant issuance, resource identity, final operation binding and enforcement replay handling remain explicit gates.
+
+## Resource observation and operation-binding contract draft
+
+The [separate adapter observation model](../resource-observation-binding.md) tests structural provenance separation, observation lifetime invalidation and exact operation binding using supplied synthetic metadata. It does not close the trusted resource identity gate. A real retained-handle collector, supported Windows traversal/stability policy, combined human/authority decision envelope, final revalidation/replay semantics and controlled denial-prevents-operation integration remain unimplemented.

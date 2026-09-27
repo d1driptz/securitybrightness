@@ -183,3 +183,7 @@ A separate `FileReadConstraint` and explicit evaluator now compare an owner, exa
 ### Registry-bound review freshness (inactive)
 
 An isolated coordinator now binds draft-review freshness to an authenticated existing application and its registry activation lease. Rotation, permission/version changes, revocation, persistent lock/re-unlock and registry unavailability invalidate old review evidence. It performs no policy/scope authorization, grants no authority and is not consumed by `/check`. A current result may exist for an authenticated application with no scopes; it must never be treated as permission. See [registry-bound review](registry-bound-review.md) for tested invariants and the remaining gate matrix.
+
+### Adapter observation/operation-binding model (inactive)
+
+`AdapterObservationSession` keeps supplied Windows resource reports separate from requester proposals and binds their exact session-local lifetimes to an application/proposal/byte limit. Release, replacement and supersession invalidate old binding evidence. These are synthetic-report contract tests, not verified file identity: no Windows collector, actual handle, authorization integration or protected operation exists. See [adapter observations and operation binding](resource-observation-binding.md) for Windows race/reparse requirements and the mandatory end-to-end denial test gate.
