@@ -23,3 +23,5 @@ Run from the repository root:
 ```bash
 python -m unittest discover -s core -p "test_*.py" -v
 ```
+
+An opt-in [controlled fixture read experiment](../docs/controlled-fixture-read.md) now demonstrates one real mediated read, separate from the service and SDK. It accepts no arbitrary file path and requires a separate operator approval plus current authority. `python -m core.controlled_read_demo` runs its synthetic-fixture console demonstration on Windows. This is not general file execution or Windows-wide protection.

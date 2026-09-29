@@ -8,16 +8,16 @@ Capture checks current review evidence before and after native binding. Inspecti
 
 No human approval is recorded here. Existing proposal-only decisions cannot be attached and promoted into authority for the combined envelope. A future authenticated human-control interface must display the observed resource separately from the requester label, explain the precise effects and bind its decision to the whole envelope. The current grant/draft/resource lifetimes must still be checked at the actual operation boundary. These checks are not yet implemented as an atomic downstream operation guard.
 
-## Owner decision needed before a reader
+## Owner decision (resolved 2026-09-29)
 
-The collector tests establish that metadata-only handles do not prove immutable contents. The product must define what a human approval means:
+The collector tests establish that metadata-only handles do not prove immutable contents. The owner selected option 1 below for the first fixture-only experiment:
 
 1. **Approve a file object and bounded read effect (recommended for the first fixture-only experiment).** The prompt identifies the adapter-selected object and maximum returned bytes. It must explicitly avoid promising approval of exact pre-inspected bytes. The experimental reader must retain its resource handle, refuse unsupported mutation situations, abort on detected inconsistency and never silently switch objects.
 2. **Approve exact immutable bytes.** This needs an explicitly authorized snapshot/stability protocol, including permission to acquire protected contents for review. Metadata, file IDs and timestamps alone cannot support this meaning. No pre-authorization content hashing or reading may be added implicitly.
 
-This is an approval-semantics decision, not a request to publish already verified inactive code. The first option is a deliberately narrower proof; it does not close the second option's content-consent requirements.
+The first option is a deliberately narrower proof; it does not close the second option's content-consent requirements. The [controlled fixture experiment](controlled-fixture-read.md) now implements that choice separately; this envelope module remains non-authoritative sampling.
 
-## Proposed first controlled experiment (not implemented or run)
+## Original experiment requirements and current implementation
 
 Use only a runner-created synthetic fixture and an explicitly selected adapter-owned handle. No arbitrary path endpoint, normal `/check` integration or access to user documents. The human-control channel must be distinct from application input. SecurityBrightness must evaluate current scope/policy and required human control; a fresh review record cannot substitute for either.
 
@@ -25,4 +25,4 @@ The experimental operation must consume a one-use, exact envelope-bound decision
 
 Instrument the protected reader and application-visible bytes. Deny, absent human control, wrong application/resource/effect, stale proposal/draft/grant, rotated credentials, failed lookup, changed resource, expired/consumed decision and replay must yield zero delivered bytes with no fallback. An authorized matching case must deliver only the intended bounded fixture bytes. This proves denial prevents the operation through that specific protected path; it does not prove protection against direct OS access outside it, hostile code in the trusted process, arbitrary Windows files or antivirus threats.
 
-Still required before that experiment: the owner-selected approval semantics, trusted acquisition/human-channel provenance, appropriate handle rights/stability strategy, authoritative grant/decision lifecycle, final atomic consumption/revocation ordering and one-use replay accounting. The inactive envelope does not solve those gates merely by existing.
+The separate fixture integration now supplies a trusted fixture bootstrap/operator port, retained-object read adapter, mandatory approval/current scope checks, and one-use consumption under the registry lease. Its tests demonstrate preflight denial and zero-byte failure delivery. Those mechanisms belong to the experiment, not this envelope helper. General broker isolation, authenticated external human/application channels, cancellation and exact-byte stability remain outside its supported scope.

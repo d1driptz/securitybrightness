@@ -195,3 +195,7 @@ A separate `WindowsIdentityCollector` now obtains OS file identity through retai
 ### Combined resource review envelope (inactive)
 
 `ResourceReviewEnvelopes` pairs exact registry/draft evidence with the collector-owned resource observation and operation binding. It catches review/registry changes across resource validation, rejects foreign/copied/transferred evidence, and retires stale samples. It records no human approval and may be current for an application without granted scopes. Repeated freshness inspection is not atomic authorization or one-use execution. See [resource review envelopes and the first experiment decision](resource-review-envelopes.md).
+
+### Controlled fixture read enforcement (opt-in experiment)
+
+`FixtureReadExperiment` now mediates one real bounded read of a bootstrap-created synthetic fixture. Current application scope, separate operator approval, exact proposal/resource/review binding and final registry freshness are required; attempts consume approval once. Preflight denial prevents the native read, and failures after buffering return zero protected bytes. Registry revocation serializes with publication; in-flight reads are not retroactively canceled. Metadata/file identity does not promise immutable contents. Automated operator decisions are simulated, and hostile in-process Python or direct Windows access is not covered. No live HTTP, `/check`, SDK or v1 behavior changed. See [the controlled fixture experiment](controlled-fixture-read.md) for exact guarantees, manual demo and limitations.

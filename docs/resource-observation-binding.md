@@ -51,3 +51,5 @@ Size and change time are inconsistency signals, not cryptographic content identi
 The separate collector implements part of step 2 for its narrow profile. None of steps 3 through 6, nor the trusted acquisition boundary of step 2, is established by these primitives. SecurityBrightness remains the authorization boundary, not a general executor or antivirus. Active authorization and enforcement must wait for these gates and their tests.
 
 Session closure irreversibly retires all model evidence. Display labels are bounded to 32,767 UTF-16 code units, not merely Python code points. Resource matching deliberately remains independent of registry state; it must never substitute for current authority validation.
+
+The subsequent [controlled fixture read experiment](controlled-fixture-read.md) implements a separate, opt-in retained-object reader with mandatory operator approval and current authority. This helper remains non-authoritative; the experiment's narrow enforcement claim and limitations must not be generalized to arbitrary files or `/check`.

@@ -103,3 +103,7 @@ The isolated [draft review ledger](../file-read-review-lifecycle.md) tests expec
 ## Resource observation and operation-binding contract draft
 
 The [separate adapter observation model](../resource-observation-binding.md) tests structural provenance separation, observation lifetime invalidation and exact operation binding using supplied synthetic metadata. It does not close the trusted resource identity gate. A real retained-handle collector, supported Windows traversal/stability policy, combined human/authority decision envelope, final revalidation/replay semantics and controlled denial-prevents-operation integration remain unimplemented.
+
+## First controlled enforcement experiment (2026-09-29)
+
+The owner chose verified-file-object plus bounded-effect consent, not immutable-byte consent. The separate [fixture-only integration](../controlled-fixture-read.md) now enforces current registry scope, separate operator approval, exact retained-object/proposal/review binding and one-use consumption for a real Windows read. Preflight denial prevents the read; post-buffer failures withhold all result bytes. This advances steps 7–8 only for that trusted-host synthetic path, without activating v2 in `/check` or completing general constrained-grant persistence/broker isolation. Registry revocation ordering, synchronous-I/O limits and the absence of immutable-content guarantees are explicit. No broader path is authorized by this milestone.
