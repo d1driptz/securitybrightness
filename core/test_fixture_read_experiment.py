@@ -609,6 +609,79 @@ class FixtureReadTests(unittest.TestCase):
         for request in retired:
             self.denied(self.read(request))
 
+    def test_demo_revocation_is_pass_with_zero_bytes_and_no_native_read(self):
+        from core.controlled_read_demo import _revoked_case
+        credential = self.registry.register('controlled-demo-app', ['files.read'])
+        request = self.app.propose('controlled-demo-app', credential, self.proposal)
+        self.assertTrue(self.operator.approve(self.operator.review(request)))
+        with patch.object(self.experiment._reader.k, 'ReadFile') as native_read, \
+             patch('builtins.print') as output:
+            _revoked_case(self.experiment, request, credential, self.proposal)
+            native_read.assert_not_called()
+            self.assertIn('Revoked approval — PASS — DENY: 0 protected bytes released.',
+                          [call.args[0] for call in output.call_args_list])
+        fresh = self.app.propose('controlled-demo-app', credential, self.proposal)
+        self.assertTrue(self.operator.approve(self.operator.review(fresh)))
+        result = self.app.read_once(fresh, 'controlled-demo-app', credential, self.proposal)
+        self.assertTrue(result.released)  # Later stages remain usable with new approval.
+        self.denied(self.app.read_once(request, 'controlled-demo-app', credential, self.proposal))
+
+    def test_demo_cannot_call_failed_revocation_a_pass(self):
+        from core.controlled_read_demo import _revoked_case
+        request = self.propose()
+        with patch.object(self.operator, 'revoke_review', return_value=False), \
+             patch.object(self.app, 'read_once') as read, patch('builtins.print') as output:
+            with self.assertRaises(RuntimeError):
+                _revoked_case(self.experiment, request, self.credential, self.proposal)
+            read.assert_not_called()
+            self.assertFalse(any('PASS' in str(call) for call in output.call_args_list))
+
+    def test_demo_never_interprets_arbitrary_exception_as_expected_denial(self):
+        from core.controlled_read_demo import _revoked_case
+        request = self.propose()
+        with patch.object(self.app, 'read_once', side_effect=RuntimeError('unexpected adapter error')), \
+             patch('builtins.print') as output:
+            with self.assertRaises(RuntimeError):
+                _revoked_case(self.experiment, request, self.credential, self.proposal)
+            self.assertFalse(any('PASS' in str(call) for call in output.call_args_list))
+
+    def test_demo_never_labels_leaked_or_malformed_results_as_pass(self):
+        from core.controlled_read_demo import _report
+        from core.fixture_read_experiment import ProtectedReadResult
+        bad = [ProtectedReadResult(False, 'controlled_read_denied', b'leak'),
+               ProtectedReadResult(True, 'controlled_read_released', b'leak'),
+               ProtectedReadResult(False, 'controlled_read_denied', None),
+               ProtectedReadResult(False, 'unexpected_failure'), None]
+        for result in bad:
+            with patch('builtins.print') as output:
+                with self.assertRaises(RuntimeError):
+                    _report('Revoked approval', result, allowed=False)
+                output.assert_not_called()
+
+    def test_demo_expiry_at_revocation_prompt_is_not_misreported_as_revocation_pass(self):
+        from core.controlled_read_demo import main
+        from core.fixture_read_experiment import _Reader
+        now, prompts = 1000.0, 0
+        def answer(_):
+            nonlocal now, prompts
+            prompts += 1
+            if prompts == 3:  # Human waits at the revoke-before-use approval prompt.
+                now += 61
+            return 'DENY' if prompts == 1 else 'ALLOW ONCE'
+        original_read = _Reader.read_staged
+        with patch('core.controlled_read_demo.sys.stdin.isatty', return_value=True), \
+             patch('core.fixture_read_experiment.monotonic', side_effect=lambda: now), \
+             patch('builtins.input', side_effect=answer), patch('builtins.print') as output, \
+             patch('core.fixture_read_experiment.OperatorFixturePort.revoke_review') as revoke, \
+             patch.object(_Reader, 'read_staged', autospec=True, side_effect=original_read) as reader:
+            self.assertEqual(main([]), 1)
+            revoke.assert_not_called()
+            self.assertEqual(reader.call_count, 1)  # Only the preceding approved read.
+            self.assertEqual(prompts, 3)
+            lines = [str(call.args[0]) for call in output.call_args_list]
+            self.assertTrue(any('operator approval was not accepted' in line for line in lines))
+            self.assertFalse(any('Revoked approval — PASS' in line for line in lines))
+
 
 if __name__ == '__main__':
     unittest.main()

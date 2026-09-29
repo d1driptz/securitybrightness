@@ -58,10 +58,20 @@ There are **nine decision prompts**: type `DENY` at the first, then `ALLOW ONCE`
 | 5a–5b | A changed byte effect cannot inherit approval; a fresh displayed request needs a new ALLOW ONCE |
 | 6a–6b | A second generated resource/session rejects the original approval; its separately displayed identity needs fresh approval |
 
-The three expected successful reads are the original one, the newly approved changed request, and the newly approved second resource. All intervening negative cases must report `DENY: 0 protected bytes released`. Success ends with `All owner demonstration stages completed`. An incomplete/stopped walkthrough must not be reported as a completed human demonstration.
+The three expected successful reads are the original one, the newly approved changed request, and the newly approved second resource. All intervening negative cases must report `PASS — DENY: 0 protected bytes released`. Success ends with `All owner demonstration stages completed`. An incomplete/stopped walkthrough must not be reported as a completed human demonstration.
 
 Automated script tests mock terminal input and advance a test clock to verify control flow quickly. Those mocks exist only in tests. The owner command runs the real interactive program and real deadline wait; it is intentionally separate from automated test evidence.
 
 ## Claim and remaining limits
 
 SecurityBrightness has demonstrated denying a native fixture read on preflight failure and withholding all buffered bytes on later failure through this specific integration path. Direct Windows access, hostile in-process code, immutable content, durable distributed approval/audit, hard I/O cancellation and general application/broker isolation remain unproven or unsupported. No write/delete/process/payment/communication enforcement is introduced.
+
+## Owner-run follow-up: revocation reporting
+
+The full owner transcript confirms successful explicit denial (0 bytes), one-use allow (37 bytes), and replay denial (0 bytes). It then shows the generic message `No fallback read was attempted` immediately after the stage-4a approval prompt, before the revocation-confirmation line. The earlier paraphrase suggested a read after revocation, but the transcript does not show that. The stage stopped before revocation: operator approval was not accepted (or another pre-revocation exception occurred). A 60-second expiry at the prompt reproduces that sequence; the original generic output cannot establish which freshness condition failed.
+
+On the verified path, revocation retires the request. Submitting that request to `read_once` is the test of enforcement: it returns the explicit denied result and does not call native `ReadFile`. Attempting the application-facing request is not equivalent to performing a file read. Dedicated regression tests observe zero native read calls, empty delivered bytes and successful later use only after a fresh operator approval. The protected-read implementation is unchanged by this reporting update.
+
+The walkthrough now checks that revocation was actually confirmed and prints `Revoked approval — PASS — DENY: 0 protected bytes released.` only after validating the explicit result type, denial status/reason and empty bytes. Failed revocation, arbitrary exceptions, malformed results or any nonempty denied payload are never accepted as PASS. Unexpected failure identifies its stage and stops without a fallback/retry. An unaccepted operator approval has its own diagnostic explaining that the review expired, changed or became unavailable and that the read/revocation test did not run. It is never labeled PASS. A regression reproduces expiry specifically at the third owner prompt and verifies only the earlier permitted read occurred, with no call to revocation. The startup banner identifies `revocation-reporting.v2` and the actual module path so the owner can identify the running checkout.
+
+Prompt order remains nine decisions: `DENY` once, then eight separate `ALLOW ONCE` decisions, including fresh approval for the changed request and second resource. The real expiry wait remains 65 seconds. Automated input/time mocks are test-only; a complete automated reproduction using real Windows reads and the real 65-second wait also passed, but remains separate from the owner's unfinished human walkthrough.
