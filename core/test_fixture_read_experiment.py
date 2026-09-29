@@ -493,15 +493,121 @@ class FixtureReadTests(unittest.TestCase):
             self.assertEqual(main(['--approve']), 2)
             fixture.assert_not_called()
 
-    def test_demo_explicit_operator_allow_and_default_deny_paths(self):
+    def test_demo_complete_script_with_simulated_input_and_clock_only_in_test(self):
         from core.controlled_read_demo import main
-        for answer, expected in [('APPROVE FIXTURE ONCE', 'ALLOW:'), ('yes', 'DENY:')]:
-            with patch('core.controlled_read_demo.sys.stdin.isatty', return_value=True), \
-                 patch('builtins.input', return_value=answer), patch('builtins.print') as output:
-                self.assertEqual(main([]), 0)
-                lines = [str(call.args[0]) for call in output.call_args_list]
-                self.assertTrue(any(line.startswith(expected) for line in lines))
-                self.assertIn('Replay: DENY, 0 protected bytes released.', lines)
+        now = 1000.0
+        def advance(seconds):
+            nonlocal now
+            now += seconds
+        with patch('core.controlled_read_demo.sys.stdin.isatty', return_value=True), \
+             patch('builtins.input', side_effect=['DENY'] + ['ALLOW ONCE'] * 8), \
+             patch('core.fixture_read_experiment.monotonic', side_effect=lambda: now), \
+             patch('core.controlled_read_demo.sleep', side_effect=advance), \
+             patch('builtins.print') as output:
+            self.assertEqual(main([]), 0)
+            lines = [str(call.args[0]) for call in output.call_args_list]
+            for label in ['Owner denial', '3. Replay', 'Revoked approval', 'Stale grant approval',
+                          'Expired approval', 'Changed request cannot', 'Different resource/session']:
+                self.assertTrue(any(line.startswith(label) and 'DENY: 0' in line for line in lines), label)
+            self.assertEqual(sum(' — ALLOW:' in line for line in lines), 3)
+            self.assertIn('All owner demonstration stages completed. No broader protection is claimed.',
+                          [line.strip() for line in lines])
+
+    def test_demo_never_automatically_approves_after_owner_stops(self):
+        from core.controlled_read_demo import main
+        with patch('core.controlled_read_demo.sys.stdin.isatty', return_value=True), \
+             patch('builtins.input', side_effect=['DENY', 'stop']), patch('builtins.print') as output:
+            self.assertEqual(main([]), 0)
+            self.assertFalse(any(' — ALLOW:' in str(call.args[0]) for call in output.call_args_list))
+
+    def test_expiry_during_final_freshness_validation_prevents_delivery(self):
+        request = self.propose()
+        self.approve(request)
+        deadline = self.experiment._requests[request.request_id]['deadline']
+        inspect = self.experiment._envelopes.inspect
+        calls = 0
+        def slow_final_validation(*args):
+            nonlocal calls
+            result = inspect(*args)
+            calls += 1
+            if calls == 2:
+                clock.return_value = deadline
+            return result
+        with patch('core.fixture_read_experiment.monotonic', return_value=deadline - 1) as clock, \
+             patch.object(self.experiment._envelopes, 'inspect', side_effect=slow_final_validation):
+            self.denied(self.read(request))
+
+    def test_review_evidence_without_operator_decision_is_not_permission(self):
+        request = self.propose()
+        self.operator.review(request)
+        with patch.object(self.experiment._reader.k, 'ReadFile') as native_read:
+            self.denied(self.read(request))
+            native_read.assert_not_called()
+
+    def test_post_buffer_draft_revocation_discards_all_bytes(self):
+        request = self.propose()
+        self.approve(request)
+        ticket = self.experiment._requests[request.request_id]['envelope'].review.review
+        read = self.experiment._reader.read_staged
+        def revoke_after_buffer(limit):
+            data = read(limit)
+            self.experiment._ledger.revoke(ticket.draft_id, ticket.revision)
+            return data
+        with patch.object(self.experiment._reader, 'read_staged', side_effect=revoke_after_buffer):
+            self.denied(self.read(request))
+
+    def test_redisplay_never_extends_deadline_and_expiry_during_display_retires(self):
+        request = self.propose()
+        deadline = self.experiment._requests[request.request_id]['deadline']
+        inspect = self.experiment._envelopes.inspect
+        def slow_display(*args):
+            result = inspect(*args)
+            clock.return_value = deadline
+            return result
+        with patch('core.fixture_read_experiment.monotonic', return_value=deadline - 1) as clock, \
+             patch.object(self.experiment._envelopes, 'inspect', side_effect=slow_display):
+            with self.assertRaises(ValueError):
+                self.operator.review(request)
+        self.assertEqual(self.experiment._requests[request.request_id]['deadline'], deadline)
+        self.denied(self.read(request))
+
+    def test_expiry_at_publication_after_evidence_retirement_releases_nothing(self):
+        request = self.propose()
+        self.approve(request)
+        deadline = self.experiment._requests[request.request_id]['deadline']
+        discard = self.experiment._envelopes.discard
+        def delayed_retirement(*args):
+            discard(*args)
+            clock.return_value = deadline
+        with patch('core.fixture_read_experiment.monotonic', return_value=deadline - 1) as clock, \
+             patch.object(self.experiment._envelopes, 'discard', side_effect=delayed_retirement):
+            self.denied(self.read(request))
+        self.denied(self.read(request))
+
+    def test_approval_crossing_deadline_is_not_issued(self):
+        request = self.propose()
+        display = self.operator.review(request)
+        deadline = self.experiment._requests[request.request_id]['deadline']
+        inspect = self.experiment._envelopes.inspect
+        def slow_approval(*args):
+            result = inspect(*args)
+            clock.return_value = deadline
+            return result
+        with patch('core.fixture_read_experiment.monotonic', return_value=deadline - 1) as clock, \
+             patch.object(self.experiment._envelopes, 'inspect', side_effect=slow_approval):
+            self.assertFalse(self.operator.approve(display))
+        self.denied(self.read(request))
+
+    def test_retired_request_capacity_cannot_be_recycled_to_restore_approval(self):
+        retired = []
+        for _ in range(32):
+            request = self.propose()
+            self.operator.deny(request)
+            retired.append(request)
+        with self.assertRaises(ValueError):
+            self.propose()
+        for request in retired:
+            self.denied(self.read(request))
 
 
 if __name__ == '__main__':

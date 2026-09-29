@@ -193,17 +193,22 @@ class FixtureReadExperiment:
             raise ValueError('unknown or retired request')
         return state
 
+    def _unexpired(self, state):
+        if monotonic() >= state['deadline']:
+            state['retired'] = True
+            raise ValueError('review expired')
+
     def _current(self, state):
         if self._closed or self._faulted:
             raise ValueError('experiment unavailable')
-        if monotonic() >= state['deadline']:
-            raise ValueError('review expired')
+        self._unexpired(state)
         if not self._envelopes.inspect(state['envelope'], state['app'].application_id, state['proposal']).current:
             raise ValueError('evidence stale')
         # This experimental policy always requires human approval even for trusted
         # applications. Only existing authority supplies scopes, never the proposal.
         if not ({'files.read', '*'} & state['app'].scopes):
             raise AuthorityInactiveError('read scope required')
+        self._unexpired(state)
 
     def propose(self, application_id, credential, proposal):
         if type(credential) is not str or not 1 <= len(credential) <= 512:
@@ -247,6 +252,7 @@ class FixtureReadExperiment:
                         envelope.envelope_id, envelope.review.review.draft_id,
                         json.dumps(state["proposal"].to_payload(), ensure_ascii=True, sort_keys=True))
                     # Redisplay invalidates any previous approval/display record.
+                    self._unexpired(state)
                     state['display'], state['approved'] = display, False
                     return display
             except Exception:
@@ -306,7 +312,10 @@ class FixtureReadExperiment:
                         if type(data) is not bytes or len(data) != self._observation.size_bytes or len(data) > state['max_bytes']:
                             raise ResourceIdentityError('invalid_read_result')
                         self._envelopes.discard(state['envelope'])
-                        return ProtectedReadResult(True, 'controlled_read_released', data)
+                        result = ProtectedReadResult(True, 'controlled_read_released', data)
+                        # Publication decision: no blocking work after this deadline check.
+                        self._unexpired(state)
+                        return result
             except Exception:
                 return ProtectedReadResult(False, 'controlled_read_denied')
 

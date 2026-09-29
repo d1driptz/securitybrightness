@@ -37,7 +37,7 @@ Reparse points, hard links, unsupported case behavior, remote/non-NTFS resources
 
 The trusted host must keep the operator port, registry, controller and adapter private. The application-facing port accepts untrusted request data; these Python objects are **not isolation against hostile Python executing in the same host process**. Private attributes are not a security boundary. There is no external authenticated application transport, secure desktop, durable approval ledger or cross-process broker in this experiment.
 
-Automated tests simulate operator decisions through the separate trusted port. They do not claim a real person approved the automated fixture reads. The optional console demonstration requires an interactive local terminal, displays the full envelope and requires the exact typed phrase `APPROVE FIXTURE ONCE`. It accepts no path arguments, automatic approval flags or piped approval input. The local operator terminal is a deliberately limited trusted channel, not general human identity verification.
+Automated tests simulate operator decisions through the separate trusted port. They do not claim a real person approved the automated fixture reads. The optional console demonstration requires an interactive local terminal, displays the full envelope and requires the exact typed phrase `ALLOW ONCE`. It accepts no path arguments, automatic approval flags or piped approval input. The local operator terminal is a deliberately limited trusted channel, not general human identity verification.
 
 Run manually from the repository:
 
@@ -45,10 +45,12 @@ Run manually from the repository:
 python -m core.controlled_read_demo
 ```
 
-The demo first verifies denial without approval, then performs the operator-reviewed branch, then verifies replay denial. Only synthetic fixture data is shown. The automated tests exercise both operator answers with explicitly simulated terminal input.
+The owner walkthrough now exercises explicit DENY, ALLOW ONCE, replay, revoked/stale/expired approval, and changed request/resource binding. It uses a real 65-second expiry wait and fresh typed approval for changed requests/resources. Only synthetic fixture data is shown. See [the dedicated security review and owner steps](fixture-security-review.md). Automated script checks simulate input/time only in tests; they are not human demonstration evidence.
 
 This establishes real enforcement **only through this controlled integration path**. An application using Windows directly or bypassing the trusted host is not prevented from accessing files. SecurityBrightness remains the authorization/human-control boundary; the small adapter mediates this one effect. `/check` and v1 remain unchanged.
 
 ## Before any expansion
 
 Stop at this single fixture path. Generalization needs a separately reviewed isolated broker/transport and authenticated human channel, trusted acquisition policy for real resources, cancellation/liveness and revocation semantics for slow I/O, durable decision/audit/recovery requirements where applicable, and a separately authorized snapshot mode if exact-byte consent is desired. No production Windows-wide protection claim follows from this experiment.
+
+The dedicated review fixed expiry crossing the final freshness check: deadlines are now rechecked after inspection and at the publication decision, with terminal retirement on expiry. See the linked review for reproduced failures, regression evidence and broker trust analysis.
