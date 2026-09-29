@@ -66,9 +66,10 @@ revocation fence; no asynchronous cancellation can retroactively recall a return
 
 ## Remaining gate before activation
 
-Define the broker-owned synthetic-fixture handle lifecycle and staged-buffer
-ownership, then test exact resource observations and operation binding across
-this boundary. Define one-use authority consumption, current registry and human
+A separate [inactive fixture owner](broker-resource-ownership.md) now tests
+original-handle metadata ownership and local one-shot proposal binding. It is
+not connected to the child. Next define authenticated observation issuance,
+session/token lookup and staged-buffer ownership across the process boundary. Define one-use authority consumption, current registry and human
 control, expiry/revocation/cancellation fencing at final delivery and crash
 semantics without renewal or replay. Choose a restricted token/application
 channel design deliberately before a real cooperating application. A resource
