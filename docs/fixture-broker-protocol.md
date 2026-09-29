@@ -22,8 +22,8 @@ Each endpoint can complete exactly one request/reply exchange. A second operatio
 - There is no process isolation, restricted token, peer authentication, pipe ACL, cancellation, timeout, crash recovery or persistent revocation mechanism here. HMAC is not a replacement for them. Closing drops key references but does not promise secure memory erasure.
 - Unauthenticated invalid traffic can close an endpoint. Availability and hostile same-process code are outside this primitive's guarantee. It accepts no external traffic today.
 
-## Next transport gate
+## Transport gate status
 
-Implement an opt-in fixture-only child process and bounded private transport without connecting it to active authorization. Bootstrap secrets must not appear in arguments, environment variables, logs or requester input. Independently test wrong-peer/session injection, partial frames, flooding, child startup failure, hangs, cancellation, parent/child death and endpoint reuse. Use only broker-created synthetic fixtures initially.
+The separate [inactive denial-only transport](fixture-broker-transport.md) now implements private child startup, bounds, cancellation and crash handling. The codec itself remains pure and inactive; the limitations above describe the codec alone. No file-reading broker is active. Bootstrap secrets must not appear in arguments, environment variables, logs or requester input. Independently test wrong-peer/session injection, partial frames, flooding, child startup failure, hangs, cancellation, parent/child death and endpoint reuse. Use only broker-created synthetic fixtures initially.
 
 Before connecting the protected path, define where staged bytes live, who owns the retained handle and how cancellation/revocation invalidates a pending result. Authenticate application/coordinator/broker channels and scope capabilities to the exact peer/session/resource/decision. Keep final authority and human control in SecurityBrightness; never add arbitrary commands or reopen requester paths. A smaller broker reduces native code in the coordinator but remains trusted for resource acquisition and read correctness.
