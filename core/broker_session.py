@@ -63,9 +63,9 @@ class BrokerResourceSession:
                 self._current()
                 # Only issued objects and bindings are stored; no deserialization
                 # or token-selected path/handle acquisition occurs on lookup.
-                self._records[token] = (owner,binding)
-                self._owner_sessions.add(description.session)
                 observation = SessionObservation(self._session,token,description)
+                self._records[token] = (owner,binding,observation)
+                self._owner_sessions.add(description.session)
                 owner = None  # Ownership transferred to records, including on errors.
                 self._current()
                 return observation
@@ -75,6 +75,27 @@ class BrokerResourceSession:
                 finally:
                     self.close()
                 raise BrokerResourceError('session_issue_rejected') from None
+
+    def inspect(self, observation, application_id, proposal, decision_id):
+        """Sample only the exact locally issued observation and native owner."""
+        with self._lock:
+            try:
+                self._current()
+                if (type(observation) is not SessionObservation
+                        or observation.session_id != self._session
+                        or type(observation.resource_token) is not str):
+                    raise BrokerResourceError('invalid_observation')
+                record = self._records.get(observation.resource_token)
+                if record is None or record[2] is not observation:
+                    raise BrokerResourceError('unknown_observation')
+                description = record[0].inspect_binding(record[1],application_id,proposal,decision_id)
+                if observation.description is not description:
+                    raise BrokerResourceError('changed_observation')
+                self._current()
+                return description
+            except Exception:
+                self.close()
+                raise BrokerResourceError('session_inspection_rejected') from None
 
     def verify_once(self, session_id, resource_token, application_id, proposal, decision_id):
         with self._lock:
@@ -90,7 +111,7 @@ class BrokerResourceSession:
                     raise BrokerResourceError('unknown_or_retired_token')
                 # Retire before any native calls. Failures never restore a slot.
                 self._records[resource_token] = None
-                owner,binding = record
+                owner,binding,_ = record
                 result = owner.verify_once(binding,application_id,proposal,decision_id)
                 owner = None  # verify_once successfully closed it.
                 self._current()

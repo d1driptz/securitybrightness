@@ -165,6 +165,21 @@ class BrokerFixtureOwner:
                 self.close()
                 raise BrokerResourceError('binding_rejected') from None
 
+    def inspect_binding(self, binding, application_id, proposal, decision_id):
+        """Non-consuming metadata sample, never an authorization lease."""
+        with self._lock:
+            try:
+                if (self._state != 'bound' or type(binding) is not BrokerResourceBinding
+                        or binding is not self._issued
+                        or (binding.session,binding.canonical_binding) != self._issued_snapshot
+                        or self._request(application_id,proposal,decision_id) != self._issued_snapshot[1]):
+                    raise BrokerResourceError('binding_unavailable')
+                self._validate()
+                return self._description
+            except Exception:
+                self.close()
+                raise BrokerResourceError('binding_rejected') from None
+
     def verify_once(self, binding, application_id, proposal, decision_id):
         """Consume metadata evidence, close ownership, return no contents.
 

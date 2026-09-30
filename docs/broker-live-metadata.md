@@ -69,9 +69,11 @@ wrong sequence types, exact request/observation binding, mutation, inherited API
 bypass, replay, signed live/allow/data claims, output bounds, startup/final crashes,
 hangs, final-cleanup cancellation and poisoned admission.
 
-Before human review or acquisition, design a coordinator-owned pending-review
-state that binds authenticated application identity, current registry/grant
-lifecycle, proposal version, exact observed resource/effect and human decision.
+A separate [local pending-review prototype](broker-pending-review.md) now tests
+registry/draft/resource freshness and one-use operator evidence. It is not wired
+into this protocol and accepts no serialized live observation. Before human
+review or acquisition across the channel, define authenticated operator input
+and a trusted coordinator mapping for the exact live resource/effect.
 Define atomic revocation/expiry/cancellation and one-use consumption at acquisition
 and final delivery, plus a deliberate review-time child lifetime. Neither the
 existing diagnostic action `verify` nor the decision-ID field can supply those
