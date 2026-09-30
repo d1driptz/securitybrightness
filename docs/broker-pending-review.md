@@ -74,9 +74,12 @@ same-revision constraint mutation, resource changes, serialized observations,
 registry lookup failure, expiry during metadata and final retirement, and
 registry/draft changes during resource verification or evidence retirement.
 
-Before connecting this model to the child, define authenticated operator input,
-a deliberately bounded human-review process lifetime, and a trusted mapping from
-live authenticated channel observations to coordinator state. Do not import a
+A separate [trusted-local operator handoff](broker-operator-handoff.md) now tests
+exact prompt ownership, explicit responses and automatic bounded expiry. It does
+not independently authenticate a person or connect to the child. Before that
+connection, define the actual trusted UI/process boundary, a deliberately bounded
+human-review process lifetime, and a trusted mapping from live authenticated
+channel observations to coordinator state. Do not import a
 retired receipt as a live observation or treat `allow_once` evidence as permission.
 Final acquisition and delivery still need current authority, exact downstream
 resource/effect binding, revocation/cancellation fencing and one-use authority
