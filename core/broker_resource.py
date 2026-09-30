@@ -6,6 +6,7 @@ A matching receipt is evidence only, never permission to perform an operation.
 """
 from dataclasses import dataclass
 import os
+import ctypes
 import secrets
 import re
 import tempfile
@@ -71,7 +72,7 @@ class BrokerFixtureOwner:
     """
     def __init__(self):
         self._lock = RLock()
-        self._fd = self._folder = None
+        self._fd = None
         self._state = 'new'
         self._issued = self._issued_snapshot = None
         try:
@@ -83,8 +84,18 @@ class BrokerFixtureOwner:
                     or re.fullmatch('[0-9a-f]{64}', self._token) is None
                     or self._session == self._token):
                 raise BrokerResourceError('invalid_randomness')
-            self._folder = tempfile.TemporaryDirectory(prefix='sb-broker-fixture-')
-            self._fd, self._path = tempfile.mkstemp(prefix='synthetic-', suffix='.txt', dir=self._folder.name)
+            # Atomic CREATE_NEW + DELETE_ON_CLOSE: no Python-finalizer window,
+            # directory artifact, path-based cleanup, reopen or overwrite fallback.
+            self._path = os.path.join(tempfile.gettempdir(), 'sb-broker-fixture-'+self._token+'.txt')
+            handle = self._native.k.CreateFileW(self._path, 0x40010080, 0, None, 1, 0x04200100, None)
+            if handle in (None, ctypes.c_void_p(-1).value):
+                raise BrokerResourceError('fixture_creation_failed')
+            try:
+                import msvcrt
+                self._fd = msvcrt.open_osfhandle(handle, os.O_WRONLY | os.O_BINARY)
+            except BaseException:
+                self._native.close(handle)
+                raise
             if os.get_inheritable(self._fd):
                 raise BrokerResourceError('inherited_resource')
             offset = 0
@@ -188,12 +199,6 @@ class BrokerFixtureOwner:
                 fd, self._fd = self._fd, None
                 try:
                     os.close(fd)
-                except Exception:
-                    failed = True
-            if self._folder is not None:
-                folder, self._folder = self._folder, None
-                try:
-                    folder.cleanup()
                 except Exception:
                     failed = True
             if failed:

@@ -51,10 +51,9 @@ this diagnostic must not be repurposed by changing `retired` to `live`.
 Normal successful publication requires fixture cleanup, valid exact response,
 EOF, successful child exit, successful process cleanup and a final cancellation/
 deadline check. Crashes, cancellation or filesystem cleanup errors return no
-receipt. Forced child death can leave a generated fixture directory/file because
-process termination bypasses Python cleanup. It cannot leave a usable child or
-authorization here, but crash-safe disk cleanup and quotas remain an activation
-gate. No personal files are involved. The child has normal account rights;
+receipt. The [native delete-on-close owner](broker-resource-sessions.md) now removes
+the generated pathname on process termination without Python cleanup. No
+per-fixture directory is created. The documented OS/account trust limits apply. No personal files are involved. The child has normal account rights;
 Windows jobs are not a restricted-token sandbox.
 
 ## Verification and remaining gates
@@ -65,14 +64,15 @@ claims, wrong keys/sessions/domains, replay, extra/partial/tampered frames,
 request substitution, startup failure, post-reply crash/hang, cancellation,
 shared admission and cleanup failure before reply publication.
 
-On this laptop the sandbox denies the child's Python temporary-directory ACLs;
-the real-child regression tests therefore run with normal Windows permissions.
-The implementation has no permission bypass/fallback. Test files are generated
+The earlier directory-based owner required normal Windows permissions for its
+child tests because of sandbox temporary-directory ACLs. The native owner creates
+no such directory; the current complete suite runs in the workspace sandbox.
+No permission bypass/fallback was introduced. Test files are generated
 fixtures only; the owner demonstration is separate.
 
-Next design the retained live resource session: bounded token registry, collision
-rejection, cancellation/revocation fencing, crash-safe fixture disposal and
-explicit session retirement across review. Only then add authority-controlled
+A separate inactive local registry now tests bounded live ownership, token
+collisions, expiry and terminal cancellation. Next connect a deliberately designed
+multi-step authenticated session protocol with explicit retirement across review. Only then add authority-controlled
 content acquisition and trusted staged-buffer ownership, followed by final
 registry/grant/human-control and exact one-use delivery checks. Intent and review
 evidence alone must never trigger a read. No broker activation is included here.

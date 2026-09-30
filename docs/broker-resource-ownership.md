@@ -8,8 +8,8 @@ protection claim changes.
 ## Ownership and exact binding
 
 Construction accepts no arguments. It creates one uniquely named temporary
-synthetic file containing the fixed 37-byte test text, retains the original
-noninherited creation descriptor, and obtains Windows metadata from that same
+synthetic file containing the fixed 37-byte test text with native atomic
+create-new/delete-on-close, retains the original noninherited write-only descriptor, and obtains Windows metadata from that same
 handle. It never reopens the generated pathname. Only local NTFS regular files
 with one link and no reparse attribute pass the existing native metadata checks.
 A generated filename or normalized path never serves as resource identity.
@@ -36,7 +36,9 @@ native validation and cleanup prevent those operations from extending validity.
 A lock serializes consume/close/rebind attempts; concurrent verification yields
 at most one receipt. Duplicate binding attempts, malformed requests, mutation,
 expiry, metadata or cleanup errors are terminal. Context-manager cleanup is the
-trusted caller's responsibility; there is no automatic finalizer guarantee.
+trusted caller's responsibility; Windows delete-on-close additionally removes the generated pathname on process
+exit; no per-fixture directory or Python finalizer is needed. See
+[resource sessions and disposal](broker-resource-sessions.md) for the limits.
 
 ## Windows and trust limits
 
@@ -61,9 +63,9 @@ cross-process token registry is claimed.
 ## Next gate
 
 The original denial-only child remains unchanged. A separate diagnostic child
-now returns authenticated observations only after resource retirement. Before
-any live session, define bounded session/token lookup with explicit collision
-rejection and crash-safe fixture disposal. Broker-owned
+now returns authenticated observations only after resource retirement. A separate inactive local session registry now tests bounded lookup, collision
+rejection, lifetime and terminal cancellation. Before using it across IPC, define
+a bounded multi-step session protocol and explicit peer/resource binding. Broker-owned
 handles must stay alive across review while stale sessions and cancellations
 retire them. Define staged-buffer ownership and authority-controlled acquisition;
 there must be no speculative content read based on matching metadata alone.

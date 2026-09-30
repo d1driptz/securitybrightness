@@ -210,7 +210,8 @@ class BrokerResourceTests(unittest.TestCase):
 
     def test_hard_link_change_is_rejected(self):
         binding = self.bind()
-        other = Path(self.owner._folder.name) / 'second-link.txt'
+        other = Path(self.owner._path + '.link')
+        self.addCleanup(lambda: other.unlink(missing_ok=True))
         os.link(self.owner._path, other)
         with self.assertRaises(resource.BrokerResourceError): self.verify(binding)
 
@@ -219,11 +220,9 @@ class BrokerResourceTests(unittest.TestCase):
             with self.assertRaises(resource.BrokerResourceError): resource.BrokerFixtureOwner()
             create.assert_not_called()
 
-    def test_duplicate_ids_do_not_transfer_local_binding(self):
+    def test_duplicate_ids_cannot_reopen_or_replace_fixture(self):
         with patch.object(resource.secrets, 'token_hex', side_effect=['a'*64,'b'*64,'a'*64,'b'*64]):
-            with resource.BrokerFixtureOwner() as first, resource.BrokerFixtureOwner() as second:
+            with resource.BrokerFixtureOwner() as first:
                 binding = first.bind('app', self.proposal, self.decision)
-                second.bind('app', self.proposal, self.decision)
-                with self.assertRaises(resource.BrokerResourceError):
-                    second.verify_once(binding, 'app', self.proposal, self.decision)
+                with self.assertRaises(resource.BrokerResourceError): resource.BrokerFixtureOwner()
                 first.verify_once(binding, 'app', self.proposal, self.decision)

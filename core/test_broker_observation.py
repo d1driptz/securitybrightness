@@ -160,7 +160,7 @@ class ObservationTransportTests(unittest.TestCase):
         self.assertEqual(info['size_bytes'],37)
         self.assertEqual(len(info['file_id']),32)
         self.assertFalse(Path(info['display_path']).exists())
-        self.assertFalse(Path(info['display_path']).parent.exists())
+        self.assertTrue(Path(info['display_path']).parent.exists())  # Existing temp root is never deleted.
         second = self.run_probe().inspect()
         self.assertNotEqual(info['owner_session'],second['owner_session'])
         self.assertNotEqual(info['resource_token'],second['resource_token'])
