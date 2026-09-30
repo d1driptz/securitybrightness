@@ -24,6 +24,11 @@ review evidence. Every outcome releases zero protected bytes. This UI demonstrat
 operator review orchestration, not a new enforcement experiment. Automated real
 Tk widget tests are separate from a person completing this demonstration.
 
+Owner-reported walkthrough (2026-09-30): the owner entered `ALLOW ONCE`, saw
+review evidence recorded, the session closed and zero protected bytes released.
+This confirms that evidence-only desktop interaction, not broker activation or
+completion of the future process-owned human-review flow.
+
 ## Trust and remaining gates
 
 This implements the trusted local operator bootstrap in decision 0001, option A.
