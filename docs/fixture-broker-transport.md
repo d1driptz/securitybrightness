@@ -68,8 +68,9 @@ revocation fence; no asynchronous cancellation can retroactively recall a return
 
 A separate [inactive fixture owner](broker-resource-ownership.md) now tests
 original-handle metadata ownership and local one-shot proposal binding. It is
-not connected to the child. Next define authenticated observation issuance,
-session/token lookup and staged-buffer ownership across the process boundary. Define one-use authority consumption, current registry and human
+used by the separate [retired-observation diagnostic](broker-retired-observations.md).
+No live token or data is returned. Next define live session/token lookup, crash-safe
+fixture disposal and staged-buffer ownership across the process boundary. Define one-use authority consumption, current registry and human
 control, expiry/revocation/cancellation fencing at final delivery and crash
 semantics without renewal or replay. Choose a restricted token/application
 channel design deliberately before a real cooperating application. A resource

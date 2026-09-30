@@ -127,7 +127,7 @@ class _ChildProcess:
             startup.startup.flags = 0x100  # STARTF_USESTDHANDLES
             startup.startup.stdin, startup.startup.stdout, startup.startup.stderr = handles
             startup.attributes = c.cast(buffer, c.c_void_p)
-            entry = _entry()
+            entry = self._entry_path()
             command = c.create_unicode_buffer(subprocess.list2cmdline([sys.executable, '-I', '-S', str(entry)]))
             environment = {key: os.environ[key] for key in ('SystemRoot', 'WINDIR') if key in os.environ}
             env = c.create_unicode_buffer('\0'.join(key + '=' + value for key, value in sorted(environment.items())) + '\0\0')
@@ -155,6 +155,9 @@ class _ChildProcess:
                 except Exception:
                     self.close()
                     raise
+
+    def _entry_path(self):
+        return _entry()
 
     def _close_fd(self, descriptor):
         if descriptor in self._fds:
@@ -214,3 +217,9 @@ class _ChildProcess:
                 failed = True
         if failed:
             raise BrokerProcessError('process_cleanup_failed')
+
+
+class _ObservationChild(_ChildProcess):
+    """Second fixed internal profile; no caller-selected executable or entry."""
+    def _entry_path(self):
+        return Path(__file__).resolve().with_name("broker_observation_entry.py")

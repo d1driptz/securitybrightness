@@ -1,8 +1,9 @@
 # Inactive broker-owned fixture binding
 
 `core.broker_resource.BrokerFixtureOwner` is a separate metadata-only prerequisite.
-It is not imported by the child entry, transport, existing protected reader,
-owner walkthrough, `/check` or v1. No existing protection claim changes.
+It is used only by the opt-in [retired-observation child](broker-retired-observations.md),
+not the existing protected reader, owner walkthrough, `/check` or v1. No existing
+protection claim changes.
 
 ## Ownership and exact binding
 
@@ -59,9 +60,10 @@ cross-process token registry is claimed.
 
 ## Next gate
 
-This module deliberately remains separate from the fixed denial-only child.
-Before wiring it into that child, define authenticated observation issuance and
-bounded session/token lookup with explicit collision rejection. Broker-owned
+The original denial-only child remains unchanged. A separate diagnostic child
+now returns authenticated observations only after resource retirement. Before
+any live session, define bounded session/token lookup with explicit collision
+rejection and crash-safe fixture disposal. Broker-owned
 handles must stay alive across review while stale sessions and cancellations
 retire them. Define staged-buffer ownership and authority-controlled acquisition;
 there must be no speculative content read based on matching metadata alone.

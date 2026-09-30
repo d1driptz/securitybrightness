@@ -26,6 +26,25 @@ def probe(binding, *, cancel=None, timeout=5.0):
     A fresh process/key/session per call. No retries or restored exchanges.
     Cleanup uncertainty permanently poisons this process's transport slot.
     """
+    return _run(binding, FixtureBrokerExchange, _ChildProcess, cancel=cancel, timeout=timeout)
+
+
+def observe_fixture(application_id, proposal, decision_id, *, cancel=None, timeout=5.0):
+    """Opt-in retired synthetic metadata evidence. No live token, read or grant."""
+    from .broker_observation import ObservationExchange
+    from .broker_process import _ObservationChild
+    from .structured_proposal import StructuredActionProposal
+    if type(proposal) is not StructuredActionProposal:
+        raise BrokerTransportError('invalid_proposal')
+    try:
+        request = dict(application_id=application_id, decision_id=decision_id,
+                       proposal_json=proposal.canonical_bytes().decode('ascii'))
+    except Exception:
+        raise BrokerTransportError('invalid_proposal') from None
+    return _run(request, ObservationExchange, _ObservationChild, cancel=cancel, timeout=timeout)
+
+
+def _run(binding, exchange_type, child_type, *, cancel, timeout):
     if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 10:
         raise BrokerTransportError('invalid_timeout')
     if cancel is not None and type(cancel) is not threading.Event:
@@ -38,7 +57,7 @@ def probe(binding, *, cancel=None, timeout=5.0):
             raise BrokerTransportError('deadline')
     check()
     key, session = secrets.token_bytes(32), secrets.token_bytes(32)
-    exchange = FixtureBrokerExchange(role='coordinator', key=key, session=session)
+    exchange = exchange_type(role='coordinator', key=key, session=session)
     child = None
     acquired = False
     cleanup_ok = True
@@ -48,7 +67,7 @@ def probe(binding, *, cancel=None, timeout=5.0):
         if not acquired:
             raise BrokerTransportError('busy_or_unavailable')
         check()
-        child = _ChildProcess()
+        child = child_type()
         def write(data):
             offset = 0
             while offset < len(data):

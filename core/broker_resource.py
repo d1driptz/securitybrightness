@@ -1,6 +1,7 @@
 """Inactive generated-fixture ownership and one-shot metadata binding.
 
-No content-read or delivery API. Not used by the child, /check or fixture reader.
+No content-read or delivery API. Used only by the opt-in observation diagnostic,
+never by /check or the protected fixture reader.
 A matching receipt is evidence only, never permission to perform an operation.
 """
 from dataclasses import dataclass
