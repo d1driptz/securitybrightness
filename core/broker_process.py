@@ -223,3 +223,8 @@ class _ObservationChild(_ChildProcess):
     """Second fixed internal profile; no caller-selected executable or entry."""
     def _entry_path(self):
         return Path(__file__).resolve().with_name("broker_observation_entry.py")
+
+class _LiveMetadataChild(_ChildProcess):
+    """Fixed inactive metadata-session diagnostic profile."""
+    def _entry_path(self):
+        return Path(__file__).resolve().with_name('broker_live_entry.py')

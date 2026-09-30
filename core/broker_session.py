@@ -1,7 +1,7 @@
 """Inactive bounded live ownership of generated fixtures; no read or grant API.
 
-Not wired into child IPC, /check or the existing protected reader. Session/token
-lookup establishes local ownership only, never application or human authority.
+Used only by the opt-in metadata-session child, never /check or the protected
+reader. Session/token lookup establishes local ownership only, never authority.
 """
 from dataclasses import dataclass
 import re

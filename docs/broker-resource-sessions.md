@@ -32,8 +32,8 @@ root selection remain trusted. The existing protected reader is unchanged.
 
 ## Bounded live ownership, still inactive
 
-`BrokerResourceSession` is a separate in-memory prerequisite, not wired into
-child IPC or authorization. A trusted host creates a session with capacity 1–8
+`BrokerResourceSession` is used by the separate opt-in [live-metadata diagnostic](broker-live-metadata.md),
+not authorization or the existing reader. A trusted host creates a session with capacity 1–8
 (default 4). It owns only generated fixture owners and their exact issued local
 bindings. It has a fixed sixty-second monotonic deadline; every owner also keeps
 its own existing deadline. There is no restore, import, renewal or extension API.
@@ -69,9 +69,8 @@ expiry during cleanup, cancellation, replay, tombstones, collision, concurrent
 consumption and cleanup failure across multiple owners.
 
 The retired-observation wire diagnostic remains retired and denial-only. Its
-fixture disposal now uses this native owner. No live token registry is exposed
-over that channel. Next define an authenticated, bounded multi-step session
-protocol with explicit cancellation/retirement and peer/session/resource binding
-across review. Test registry/grant/human-control freshness and revocation fences
-before allowing content acquisition or staged-byte delivery. `/check`, v1 and
-the existing fixture-only enforcement path remain unchanged.
+fixture disposal uses the native owner and exposes no live registry. A separate
+two-round diagnostic now tests authenticated live observation and terminal
+retirement without reading. Next bind coordinator-owned pending review to current
+registry/grant/human-control authority and define acquisition/delivery revocation
+fences. `/check`, v1 and the existing fixture-only enforcement path remain unchanged.
