@@ -62,9 +62,11 @@ startup, maps its generated fixture, supplies a scripted operator response,
 verifies retirement, checks EOF/exit and fixture deletion. It performs no content
 read and is not a human demonstration.
 
-Next: build a dedicated process-owning review-session host with a deliberate
-human-wait child profile, bounded cancellation and crash cleanup. Do not import
-retired observations into it or merely lengthen the diagnostic watchdog. Before
+The separate inactive process-owning host is now documented in
+[broker-review-host.md](broker-review-host.md). It has a distinct human-wait child
+profile with bounded cancellation and crash cleanup; this diagnostic mapping's
+five-second limit remains unchanged. It does not import retired observations or
+lengthen the existing diagnostic watchdog. Before
 any read/delivery activation, separately establish current grant/human-control,
 exact operation/resource/effect, expiry/revocation, one-use and final publication
 checks. A broker is not hostile-same-user isolation or a general executor.

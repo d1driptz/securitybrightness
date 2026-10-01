@@ -228,3 +228,9 @@ class _LiveMetadataChild(_ChildProcess):
     """Fixed inactive metadata-session diagnostic profile."""
     def _entry_path(self):
         return Path(__file__).resolve().with_name('broker_live_entry.py')
+
+
+class _ReviewWaitChild(_ChildProcess):
+    """Fixed inactive metadata-only human-wait profile; same native restrictions."""
+    def _entry_path(self):
+        return Path(__file__).resolve().with_name('broker_review_entry.py')

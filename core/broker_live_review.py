@@ -61,12 +61,15 @@ class LiveBrokerReview:
     Closing this mapping does not close a process: host transport must terminate
     it on cancellation/failure and require EOF, clean exit and cleanup separately.
     """
+    _max_timeout = 5
+    _exchange_type = LiveMetadataExchange
+
     def __init__(self, registry, ledger, *, key, session, timeout=5):
         if type(registry) is not ApplicationRegistry or type(ledger) is not FileReadReviewLedger:
             raise TypeError('expected registry and ledger')
-        if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 5:
+        if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= self._max_timeout:
             raise ValueError('invalid_review_lifetime')
-        self._exchange = LiveMetadataExchange(role='coordinator', key=key, session=session)
+        self._exchange = self._exchange_type(role='coordinator', key=key, session=session)
         self._registry, self._ledger, self._timeout = registry, ledger, timeout
         self._reviews = RegistryBoundFileReadReviews(registry, ledger)
         self._lock = RLock()
