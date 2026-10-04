@@ -54,6 +54,11 @@ is not connected, so these tests do not claim a new running authority boundary.
 
 ## Remaining gates before activation
 
+The separate [native retirement composition](broker-native-retirement.md) now
+tests local retained-handle validation followed by terminal consumption, without
+reads. It does not connect this model to the live child or issue acquisition
+permission; the cross-process transition below remains unsolved.
+
 An authenticated observation is a report, not proof that the broker still holds
 the same resource at consumption time. This model **does not** revalidate a native
 handle or establish live broker/resource ownership. Tests use authenticated
