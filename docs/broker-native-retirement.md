@@ -51,3 +51,7 @@ lost/duplicate messages, crashes, cancellation and expiry without reusing this
 retired receipt as authority. Bounded quarantine and a separate final publication
 check remain necessary before any new broker-backed controlled read experiment.
 The existing fixture protected-reader claim is unchanged.
+
+The separate [binding wire draft](broker-binding-protocol.md) now tests bounded
+authenticated metadata messages and terminal retirement/cancellation. It remains
+unconnected to a child or this local composition and cannot authorize acquisition.
