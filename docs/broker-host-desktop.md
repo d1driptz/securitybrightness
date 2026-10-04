@@ -43,8 +43,11 @@ instead of automatically closing or reporting success. A subsequent close can
 dismiss that completed failure report. Worker completion by itself is not treated
 as proof of successful cleanup. There is no fallback file read.
 
-These new cases have automated real-widget/private-child coverage. They have not
-yet been reported as completed by a human owner. The earlier
+These cases have automated real-widget/private-child coverage. On 2026-10-04 the
+owner reported verifying the expired/cancelled path with zero protected bytes,
+and ALLOW ONCE with retired evidence, joined worker, confirmed child cleanup,
+no operation authorized and zero protected bytes. This confirms those manual
+metadata-only paths, not permission for broker acquisition or delivery. The earlier
 `core.broker_review_desktop` evidence-only window and `core.controlled_read_demo`
 protected-reader walkthrough remain unchanged and separate.
 

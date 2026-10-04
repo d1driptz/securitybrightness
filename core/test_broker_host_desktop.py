@@ -31,7 +31,9 @@ class BrokerHostDesktopTests(unittest.TestCase):
         self.proposal = make_file_read_proposal('label', max_bytes=128)
         self.root = tk.Tk(); self.root.withdraw()
         self.pool = ThreadPoolExecutor(max_workers=1)
-        self.host = BrokerReviewHost(self.registry, self.ledger, timeout=2)
+        # Prompt-dependent cases use the actual production budget; Windows startup
+        # must not consume an unrelated artificial two-second review deadline.
+        self.host = BrokerReviewHost(self.registry, self.ledger)
         self.window = None
         self.addCleanup(self.cleanup)
 
@@ -50,7 +52,7 @@ class BrokerHostDesktopTests(unittest.TestCase):
         return self.window
 
     def pump(self, condition):
-        deadline = time.monotonic()+4
+        deadline = time.monotonic()+10
         while not condition() and time.monotonic() < deadline:
             self.root.update(); time.sleep(.003)
         self.assertTrue(condition(), self.window.status.get())
@@ -109,7 +111,8 @@ class BrokerHostDesktopTests(unittest.TestCase):
 
     def test_expiry_reports_no_success_and_cleanup(self):
         self.host = BrokerReviewHost(self.registry, self.ledger, timeout=.5)
-        window = self.start(); self.finish()
+        # Expiry during startup is equally fail-closed; a prompt is not required.
+        window = self.start(wait=False); self.finish()
         self.assertIn('expired', window.status.get())
         self.assertIn('cleanup confirmed', window.status.get())
         self.assertNotIn('retired: allow_once', window.status.get())

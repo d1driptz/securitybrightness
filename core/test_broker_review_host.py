@@ -30,7 +30,7 @@ class BrokerReviewHostTests(unittest.TestCase):
         self.ledger = FileReadReviewLedger()
         self.draft = self.ledger.create(FileReadConstraint('app', 'label', max_bytes=128))
         self.proposal = make_file_read_proposal('label', max_bytes=128)
-        self.host = host.BrokerReviewHost(self.registry, self.ledger, timeout=3)
+        self.host = host.BrokerReviewHost(self.registry, self.ledger)
         self.pool = ThreadPoolExecutor(max_workers=2)
         self.addCleanup(self.pool.shutdown, wait=True)
         self.addCleanup(self.host.close)
@@ -40,7 +40,7 @@ class BrokerReviewHostTests(unittest.TestCase):
 
     def start(self):
         future = self.pool.submit(self.run_host)
-        deadline = time.monotonic()+2
+        deadline = time.monotonic()+10
         while time.monotonic() < deadline:
             pending = self.host.operator.pending()
             if pending: return future, pending[0]
@@ -79,10 +79,9 @@ class BrokerReviewHostTests(unittest.TestCase):
         self.reject(future, display)
 
     def test_timeout_while_waiting_deletes_fixture(self):
-        self.host.close()
-        self.host = host.BrokerReviewHost(self.registry, self.ledger, timeout=.5)
-        self.addCleanup(self.host.close)
         future, display = self.start()
+        # Shorten only after reaching the phase under test; startup is not review.
+        self.host._deadline = time.monotonic()+.05
         self.reject(future, display)
 
     def test_cancel_before_start_never_launches(self):
@@ -248,11 +247,13 @@ class BrokerReviewHostTests(unittest.TestCase):
         for ending in ("sys.stdout.buffer.write(b'x');sys.stdout.buffer.flush()", 'os._exit(9)', 'time.sleep(60)'):
             with self.subTest(ending=ending):
                 self.host.close()
-                self.host = host.BrokerReviewHost(self.registry, self.ledger, timeout=.7)
+                self.host = host.BrokerReviewHost(self.registry, self.ledger)
                 self.addCleanup(self.host.close)
                 with self.helper(body+ending):
                     future, display = self.start()
                     self.host.operator.respond(display, 'ALLOW ONCE')
+                    if ending == 'time.sleep(60)':
+                        self.host._deadline = time.monotonic()+.5
                     self.reject(future, display)
 
     def test_human_wait_profile_survives_old_diagnostic_watchdog(self):
