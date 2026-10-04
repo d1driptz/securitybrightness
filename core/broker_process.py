@@ -234,3 +234,9 @@ class _ReviewWaitChild(_ChildProcess):
     """Fixed inactive metadata-only human-wait profile; same native restrictions."""
     def _entry_path(self):
         return Path(__file__).resolve().with_name('broker_review_entry.py')
+
+
+class _BindingMetadataChild(_ChildProcess):
+    """Fixed inactive binding/retirement profile; no acquisition command."""
+    def _entry_path(self):
+        return Path(__file__).resolve().with_name('broker_binding_entry.py')

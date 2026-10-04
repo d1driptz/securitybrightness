@@ -61,3 +61,8 @@ as a later acquisition token: its resource has already been retired.
 Actual acquisition still needs a deliberate one-use transition that keeps the
 resource live for a bounded operation, plus quarantine and an independent final
 publication check. This draft does not activate or claim that enforcement.
+
+The separate [fixed native-binding child](broker-binding-child.md) now exercises
+this profile against retained native fixture ownership. Its real-child tests
+compose current coordinator review checks, but no production coordinator host or
+owner-facing route selects it yet.
