@@ -71,3 +71,9 @@ Before any live read or release, separately solve and test:
 Release will need a deliberately separate tested contract; it must not be added
 as a permissive flag to this discard-only draft. `/check`, v1, the existing reader,
 the process-owned metadata host and the verified desktop walkthrough are unchanged.
+
+The inactive coordinator-side reservation lifecycle is now modeled separately in
+[broker-acquisition-draft.md](broker-acquisition-draft.md). It combines live grant
+and fresh review checks and permits only one consumption attempt. Its result is
+still not acquisition permission: broker liveness, fresh native identity validation
+and the retained-resource consumption transition remain explicit unsolved gates.
