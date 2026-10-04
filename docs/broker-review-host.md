@@ -67,9 +67,11 @@ hostile code already in the trusted process. This does not prevent direct Window
 file access or establish immutable file contents. Paths remain display text; the
 trusted child reports the OS-derived identity of its retained generated fixture.
 
-Next gate: a separate fixture-only desktop adapter for this process-owned host,
-including visible timeout/cancellation states and joining the worker on shutdown.
-Do not repurpose the old evidence-only window silently or add reads to make the
-UI demonstration more impressive. Before later acquisition/delivery activation,
+The separate fixture-only desktop adapter is described in
+[broker-host-desktop.md](broker-host-desktop.md), including visible rejection,
+cancellation and cleanup states and joined worker shutdown. The host's operator
+port exposes a frozen cleanup-status snapshot only after cleanup finishes; it
+never grants permission. The old evidence-only window remains separate. Before
+later acquisition/delivery activation,
 test exact current authority/human control, resource/effect binding, revocation,
 expiry, one-use consumption and the final protected publication boundary.

@@ -1,5 +1,5 @@
 """Opt-in process-owned metadata review. No desktop, HTTP, read or delivery API."""
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 import hmac
 import math
 import os
@@ -22,6 +22,12 @@ class BrokerReviewHostError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class BrokerShutdownStatus:
+    cleanup_confirmed: bool
+    def __bool__(self): raise TypeError('Cleanup status is not permission')
+
+
 class _ReviewWaitMapping(LiveBrokerReview):
     _max_timeout = 30
     _exchange_type = _ReviewWaitExchange
@@ -38,6 +44,7 @@ class _OperatorPort:
     def pending(self): return self._host._pending()
     def respond(self, display, answer): return self._host._respond(display, answer)
     def cancel(self): self._host.close()
+    def shutdown_status(self): return self._host._shutdown_status()
 
 
 class BrokerReviewHost:
@@ -57,6 +64,7 @@ class BrokerReviewHost:
         self._condition = threading.Condition()
         self._cancel = threading.Event()
         self._started = self._finished = False
+        self._cleanup_confirmed = False
         self._display = self._answer = None
         self.worker, self.operator = _WorkerPort(self), _OperatorPort(self)
 
@@ -98,10 +106,18 @@ class BrokerReviewHost:
             self._cancel.set()
             self._condition.notify_all()
 
+    def _shutdown_status(self):
+        with self._condition:
+            if not self._finished: return None
+            return BrokerShutdownStatus(self._cleanup_confirmed)
+
     def _run(self, app, credential, proposal, draft_id, revision):
         with self._condition:
             if self._started or self._cancel.is_set():
                 self.close()
+                if not self._started:
+                    # Cancelled before admission: no process or mapping existed.
+                    self._cleanup_confirmed = self._finished = True
                 raise BrokerReviewHostError('host_unavailable')
             self._started = True
             self._deadline = time.monotonic()+self._timeout
@@ -195,6 +211,7 @@ class BrokerReviewHost:
             finally:
                 if acquired and cleanup_ok: transport._slot.release()
                 with self._condition:
+                    self._cleanup_confirmed = cleanup_ok
                     self._finished = True
                     self._display = self._answer = None
                     self._condition.notify_all()
