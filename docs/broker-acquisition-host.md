@@ -94,3 +94,10 @@ delivery, and replay/stale/revoked/expired/changed approvals yield zero. Joining
 the owner UI requires a deliberately tested human-wait lifetime; the five-second
 diagnostic must not be extended by editing a deadline. A real cooperating
 application requires a separately defined adapter/recipient trust boundary.
+
+The separate [inactive final publication draft](broker-final-publication-draft.md)
+now tests logical recipient binding and retained quarantine through synthetic peer
+retirement, followed by a one-use dry-run final check that still discards all
+bytes. This host and its fixed child remain unchanged. Actual native/process
+retirement for that new profile, a real recipient channel and delivery remain
+separate gates.
