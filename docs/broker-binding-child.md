@@ -57,14 +57,17 @@ review, native verification failure, cleanup failure, process crash and independ
 watchdog deletion. Fault injection replaces the child entry only inside tests;
 the product launcher has no caller-selected entry argument.
 
-This milestone supplies the fixed child and integration tests, **not a production
-coordinator host** for this profile. The test driver's lifecycle checks must be
-made explicit in a dedicated host before any owner-facing integration. That host
-must own cancellation, shared admission, child joining and poisoned admission on
-uncertain cleanup, and withhold results until final authority/freshness validation.
-No raw child acknowledgement may bypass those checks.
+The child milestone supplies the fixed child and integration tests. The subsequent
+inactive binding host owns cancellation, shared admission, child joining and
+poisoned admission on uncertain cleanup, and withholds results until final
+authority/freshness validation. No raw child acknowledgement may bypass those
+checks. Neither component is connected to an owner-facing integration.
 
 The native retirement receipt cannot authorize a later read: the resource has
 already been retired. Actual acquisition still requires a deliberate live one-use
 transition, quarantine and an independent final publication check. The original
 fixture-only protected-reader claim remains unchanged.
+
+The separate [inactive binding host](broker-binding-host.md) now implements the
+coordinator ownership and final-check boundary described above. It remains
+unconnected to any desktop or active authorization route and performs no reads.
