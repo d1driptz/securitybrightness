@@ -49,3 +49,8 @@ tokens. That design still needs native resource retention through the operation,
 bounded quarantine, current-authority/revocation checks and a separate final
 publication decision before a new controlled broker-backed read experiment.
 The original fixture-only protected-reader claim remains unchanged.
+
+The separate [inactive acquisition lifecycle](broker-acquisition-lifecycle.md)
+now tests keeping review evidence live across synthetic byte quarantine and a
+discard-only final publication check. It adds no native acquisition command and
+does not connect this host to a read or delivery path.
