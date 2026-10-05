@@ -240,3 +240,9 @@ class _BindingMetadataChild(_ChildProcess):
     """Fixed inactive binding/retirement profile; no acquisition command."""
     def _entry_path(self):
         return Path(__file__).resolve().with_name('broker_binding_entry.py')
+
+
+class _AcquisitionDiscardChild(_ChildProcess):
+    """Fixed inactive native fixture staging/discard profile; no delivery."""
+    def _entry_path(self):
+        return Path(__file__).resolve().with_name('broker_acquisition_entry.py')

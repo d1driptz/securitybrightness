@@ -76,3 +76,10 @@ buffer/evidence mutation, registry/draft changes, superseding reviews, expiry,
 concurrent attempts, reentrant cancellation and codec/source cleanup failures.
 Tests use authenticated synthetic peers and bytes; they do not perform native reads
 or constitute an owner walkthrough.
+
+The separate [fixed native acquisition adapter](broker-native-acquisition.md) now
+tests real generated-fixture reads into this quarantine while retaining zero-byte
+discard/publication semantics. The separate inactive
+[child-owned discard host](broker-acquisition-host.md) composes it with fixed
+process ownership and cleanup checks; no product route or real application
+delivery is activated.
