@@ -88,10 +88,12 @@ file-content or direct Windows access-control guarantee is added.
 
 Native/process retirement for this retained-check profile is now tested. The
 recipient is still a logical binding, not a real authenticated application
-channel. A separately bounded cooperating-recipient contract must establish that
-channel from trusted observations, detect closure/replacement/version changes,
-and bind it to the current application/grant/request. Application names, PID
-strings, path labels or stored review receipts cannot establish it.
+channel. The separate [inactive fixed-peer channel witness](broker-recipient-channel.md)
+tests trusted launch, original Windows pipe/process ownership, current binding,
+one-use proof and joined retirement for a cooperating test peer. It does not
+activate a live recipient channel in this host; its retired result cannot supply
+one. Application names, PID strings, path labels or stored review receipts cannot
+establish a channel. Live composition remains a separate gate.
 
 Actual publication still needs one fixed bounded delivery operation with an
 explicit final linearization point under current authority, human control,
