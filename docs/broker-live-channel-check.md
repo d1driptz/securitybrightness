@@ -97,9 +97,13 @@ MACs do not encrypt transport; buffer disposal does not promise secure erasure o
 immutable copies or immutable file contents. Direct Windows access and hostile
 code inside trusted processes remain outside the claim.
 
-The next gate is a distinct one-use bounded publication contract with an explicit
-linearization point for current authority, required human control, exact
-resource/effect/recipient binding, cancellation, expiry and revocation. Once bytes
+The separate [inactive dry commit contract](broker-publication-commit.md) now
+defines one-use metadata phases and an explicit locked consume-and-discard point
+for this original witness/source. Its commit peer is synthetic in model tests;
+the metadata transcript still needs a fixed native peer/host composition before
+any delivery experiment. Actual publication requires a deliberate boundary for
+current authority, required human control, exact resource/effect/recipient binding,
+cancellation, expiry and revocation. Once bytes
 cross a delivery boundary, later revocation cannot retract them; that boundary
 must be deliberate and tested. A generated-fixture experiment must prove zero
 delivery on every denied, failed, stale, revoked, expired, replayed or changed
