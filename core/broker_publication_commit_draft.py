@@ -34,6 +34,11 @@ class PublicationCommitDraft:
     def __init__(self, helper, *, key, session, timeout=5):
         if type(helper) is not LiveChannelPublicationCheck:
             raise TypeError('expected exact original live channel check')
+        self._initialize(helper, key=key, session=session, timeout=timeout)
+
+    def _initialize(self, helper, *, key, session, timeout):
+        # Fixed native composition supplies its own exact-type constructor.
+        # The existing public contract still accepts only its original helper.
         if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 5:
             raise ValueError('invalid_commit_lifetime')
         self._helper = self._issued_helper = helper
@@ -107,13 +112,18 @@ class PublicationCommitDraft:
 
     def _identity_current(self, state):
         self._clock()
-        helper = self._issued_helper
         if (type(self._state) is not str or self._state != state or self._terminal is not False
-                or self._source is not self._issued_source or self._recipient is not self._issued_recipient
+                or type(self._attempted) is not bool or (state in ('new', 'prepared') and self._attempted)
+                or type(self._issued_helper._state) is not str or self._issued_helper._state != 'witnessed'):
+            raise PublicationCommitError('changed_commit_owner')
+        return self._owner_current()
+
+    def _owner_current(self):
+        self._clock()
+        helper = self._issued_helper
+        if (self._source is not self._issued_source or self._recipient is not self._issued_recipient
                 or self._acquisition is not self._issued_acquisition or self._review is not self._issued_review
                 or self._buffer is not self._issued_buffer
-                or type(self._attempted) is not bool or (state in ('new', 'prepared') and self._attempted)
-                or type(helper._state) is not str or helper._state != 'witnessed'
                 or self._child is not self._issued_child or helper._child is not self._issued_child
                 or helper._issued_child is not self._issued_child
                 or helper._native_observation is not self._observation

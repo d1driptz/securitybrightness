@@ -89,10 +89,12 @@ revocation waiting for the dry boundary, stale post-boundary receipts and failed
 registry guards. The old worker subsequently rejects the already-consumed source
 and joins cleanup; this is test orchestration rather than a new host profile.
 
-The next prerequisite is a fixed native commit-peer/host composition that verifies
-these exact metadata phases over the original guarded private channel, including
-EOF/crash/cleanup/cancellation handling. It must remain inactive and discard-only
-until separately tested. Actual one-use delivery still needs an explicitly tested
+The separate [fixed native commit composition](broker-native-publication-commit.md)
+now sends these exact metadata phases over the original guarded private channel,
+including EOF/crash/cleanup/cancellation handling. This original draft and its
+alive-only synthetic finish contract remain unchanged. The new fixed composition
+uses a distinct joined-peer terminal gate and remains inactive and discard-only.
+Actual one-use delivery still needs an explicitly tested
 publication boundary: bytes already delivered cannot be retracted by later
 revocation, and retries cannot reproduce a lost delivery. Human-wait lifetime,
 trusted real-application onboarding and a controlled generated-fixture delivery

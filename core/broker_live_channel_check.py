@@ -339,7 +339,7 @@ class LiveChannelPublicationCheck:
             self._issued_child._retired()
             if (type(self._state) is not str or self._state != 'retired' or self._started is not True
                     or self._finished is not True or self._cleanup_confirmed is not True
-                    or self._child is not self._issued_child or type(self._child) is not _RecipientWitnessChild
+                    or self._child is not self._issued_child or type(self._child) is not self._expected_child_type()
                     or type(self._native_observation) is not ProcessChannelObservation
                     or self._native_observation is not self._child._issued_observation
                     or _values(self._native_observation) != self._child_snapshot
@@ -348,6 +348,9 @@ class LiveChannelPublicationCheck:
                     or self._ack is not self._issued_ack or _values(self._ack) != self._ack_snapshot):
                 raise LiveChannelCheckError('changed_retired_live_channel')
             self._evidence_current(self._ack, 'retired'); self._checked_source()
+
+    def _expected_child_type(self):
+        return _RecipientWitnessChild
 
     def close(self):
         with self._lock:
