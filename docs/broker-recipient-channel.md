@@ -108,11 +108,11 @@ child is not an OS security sandbox. Private MACs do not encrypt messages or pro
 installed code identity; these checks do not resist hostile code inside either
 trusted process or grant global Windows access protection.
 
-Before any delivery experiment, a separate composition must keep this proven
-original live channel bound to retained quarantine and the same current
-authority/review/resource/effect throughout one final publication operation.
-The current probe deliberately retires its channel and review: its result cannot
-bridge that gap. Actual publication needs an explicit revocation/cancellation
+The separate [inactive live-channel check](broker-live-channel-check.md) now keeps
+the original peer live and owned across retained fixture quarantine and a final
+discard-only check, under the same current authority/review/resource/effect.
+This probe still deliberately retires its own channel and review: its result
+cannot bridge that gap. Actual publication needs an explicit revocation/cancellation
 linearization point, one bounded delivery, and a generated-fixture experiment
 showing zero bytes for every denied, stale, expired, revoked, replayed or changed
 request. The existing human-wait lifecycle needs deliberate alignment as well.

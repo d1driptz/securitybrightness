@@ -1,4 +1,5 @@
 """Inactive child cleanup with retained quarantine and a terminal dry-run check."""
+from contextlib import nullcontext
 from dataclasses import asdict, dataclass, field
 import hashlib
 import hmac
@@ -48,6 +49,15 @@ class BrokerPublicationDiscardHost(BrokerBindingHost):
     native cleanup, exact EOF, zero exit and child cleanup, then the final check
     discards them. The only public result is terminal metadata with zero release.
     """
+    def _check_final_publication(self, lifecycle, app, credential, proposal, descriptor):
+        return lifecycle.coordinator.check_publication(app, credential, proposal, descriptor)
+
+    def _final_check_guard(self):
+        return nullcontext()
+
+    def _post_check_evidence(self):
+        pass
+
     def _run(self, app, credential, proposal, draft_id, revision):
         with self._condition:
             if self._started or self._cancel.is_set():
@@ -146,7 +156,7 @@ class BrokerPublicationDiscardHost(BrokerBindingHost):
                 child.close(); child = None
                 self._check()
                 lifecycle.adapter.confirm_retirement(ack)
-                checked = lifecycle.coordinator.check_publication(app, credential, proposal, descriptor)
+                checked = self._check_final_publication(lifecycle, app, credential, proposal, descriptor)
                 summary = lifecycle._summary_snapshot
                 if (type(checked) is not FinalPublicationDraftCheck
                         or type(checked.binding_digest) is not str or checked.binding_digest != summary[0][1]
@@ -192,10 +202,15 @@ class BrokerPublicationDiscardHost(BrokerBindingHost):
                         self._condition.notify_all()
         # All owner cleanup and admission-slot release precede this terminal fence.
         # No bytes or executable authority cross it, even when every check succeeds.
-        with self._condition, lifecycle._lock, recipient._lock, lifecycle._acquisition._lock, model._lock:
-            try:
+        try:
+            with self._condition, self._final_check_guard(), lifecycle._lock, recipient._lock, lifecycle._acquisition._lock, model._lock:
                 self._check()
                 recipient._validate_descriptor()
+                # Validate the additional inactive profile first, then acquire
+                # a fresh authority lease for the complete original fence.
+                # Leases validate on entry; an earlier lease is not evidence
+                # against a reentrant authority change during delegated checks.
+                self._post_check_evidence()
                 with model._lease(), model._ledger._lock:
                     if (type(self._deadline) is not float or self._deadline != host_deadline
                             or type(model._deadline) is not float or model._deadline != source_deadline
@@ -282,13 +297,13 @@ class BrokerPublicationDiscardHost(BrokerBindingHost):
                         raise ValueError('changed_public_result')
                     self._check()
                     return result
-            except Exception:
-                # A post-cleanup hook or late state mutation must not leave
-                # bytes reinserted in retired quarantine. Dispose again before
-                # reporting a rejected result; uncertainty withholds status.
-                try:
-                    lifecycle.close()
-                except BaseException:
-                    transport._slot.acquire(blocking=False)  # Poison free admission.
-                    with self._condition: self._cleanup_confirmed = False
-                raise BrokerReviewHostError('stale_publication_retirement') from None
+        except Exception:
+            # A post-cleanup hook or late state mutation must not leave
+            # bytes reinserted in retired quarantine. Dispose again before
+            # reporting a rejected result; uncertainty withholds status.
+            try:
+                lifecycle.close()
+            except BaseException:
+                transport._slot.acquire(blocking=False)  # Poison free admission.
+                with self._condition: self._cleanup_confirmed = False
+            raise BrokerReviewHostError('stale_publication_retirement') from None

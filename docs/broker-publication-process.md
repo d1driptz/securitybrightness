@@ -93,7 +93,10 @@ tests trusted launch, original Windows pipe/process ownership, current binding,
 one-use proof and joined retirement for a cooperating test peer. It does not
 activate a live recipient channel in this host; its retired result cannot supply
 one. Application names, PID strings, path labels or stored review receipts cannot
-establish a channel. Live composition remains a separate gate.
+establish a channel. A separate [inactive live-channel host](broker-live-channel-check.md)
+now composes both profiles: the original peer stays live and owned across retained
+quarantine and the final dry run, which discards all bytes. It does not activate
+this host or turn retired witness evidence into a live channel.
 
 Actual publication still needs one fixed bounded delivery operation with an
 explicit final linearization point under current authority, human control,
