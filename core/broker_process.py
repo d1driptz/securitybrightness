@@ -246,3 +246,9 @@ class _AcquisitionDiscardChild(_ChildProcess):
     """Fixed inactive native fixture staging/discard profile; no delivery."""
     def _entry_path(self):
         return Path(__file__).resolve().with_name('broker_acquisition_entry.py')
+
+
+class _PublicationCheckChild(_ChildProcess):
+    """Fixed inactive retained-check fixture profile; no delivery command."""
+    def _entry_path(self):
+        return Path(__file__).resolve().with_name('broker_publication_entry.py')

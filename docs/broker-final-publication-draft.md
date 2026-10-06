@@ -75,12 +75,12 @@ orchestration, not a new owner demonstration or real adapter cleanup proof.
 
 ## Remaining gates before delivery
 
-This stage tests live acquisition and retained quarantine against synthetic
-adapter claims. The existing fixed native acquisition/discard child remains
-unchanged. A separately tested native/child/host profile must bind this new
-recipient envelope, retain quarantine while confirming actual resource ownership
-retirement, exact EOF, zero exit and joined process cleanup, and reject changes
-at every cleanup boundary. Signed acknowledgements cannot replace those checks.
+This I/O-free draft tests live acquisition and retained quarantine against
+synthetic adapter claims. The separate [inactive native/process composition](broker-publication-process.md)
+now binds this recipient envelope and tests actual fixed-fixture acquisition,
+retained quarantine through native retirement, exact EOF, zero exit and joined
+child cleanup before the final dry-run check. Signed acknowledgements cannot
+replace those checks. The earlier discard host remains unchanged.
 
 A trusted recipient must then be bound to one real cooperating channel, rather
 than treating a logical nonce, application name, PID or path as channel identity.
@@ -92,3 +92,5 @@ the protected generated-fixture path. Joining the human UI also needs deliberate
 tested wait-lifetime alignment; the five-second diagnostic must not be extended
 by mutating a deadline. No delivery experiment or broader protection is claimed
 by these inactive primitives.
+
+No real recipient channel or application delivery has been activated.
