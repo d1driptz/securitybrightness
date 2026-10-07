@@ -108,9 +108,10 @@ not establish a native payload channel, authenticated cooperating-application
 identity, general resource truth, immutable contents, durable restart recovery
 or protection against direct Windows access.
 
-The next gate is a separate bounded fixed native payload protocol and private
-transport with explicit partial-write, receipt-loss, cancellation, crash and
-cleanup behavior. It must remain inactive while tested. A deliberate human-wait
+The separate [bounded synthetic payload transport](broker-synthetic-payload-transport.md)
+now tests fixed native framing, private transport, partial writes, receipt loss,
+cancellation, crashes and cleanup. It accepts no source/authority object and is
+not connected to this reservation. Both remain inactive. A deliberate human-wait
 profile and trusted cooperating-application association are still required
 before any controlled fixture-delivery composition. Neither a dry receipt nor
 this reservation evidence may activate that composition. Application/AI intent

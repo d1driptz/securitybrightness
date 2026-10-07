@@ -86,9 +86,13 @@ dispatch; later changes cannot retract bytes already observable. A failed or los
 receipt must never enable another delivery, including across any supported
 restart boundary.
 
-Fixed native payload framing/cleanup, partial-write behavior, deliberate human-wait
-lifetime, trusted cooperating-application onboarding and a controlled generated
-fixture delivery experiment remain gates. No dry/model receipt bypasses them.
+The separate inactive [synthetic payload transport](broker-synthetic-payload-transport.md)
+now tests bounded fixed native framing/discard, partial writes and failure
+cleanup. It consumes no original source/authority and is not connected to this
+model. Original-source/native-recipient publication binding, shared admission,
+deliberate human-wait lifetime, trusted cooperating-application onboarding and a
+controlled generated-fixture delivery experiment remain gates. No dry/model
+receipt bypasses them.
 Application/AI intent does not equal human permission. SecurityBrightness remains
 the authorization and human-control boundary, not an arbitrary executor or
 antivirus.

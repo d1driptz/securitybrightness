@@ -90,9 +90,10 @@ irreversible in-memory reservation and explicitly unproven receiver claims.
 The new [original-source dry reservation](broker-live-dispatch-reservation.md)
 binds that model to current authority/source and recipient in the separate live
 synthetic-commit profile, and consumes/discards without delivery. This fixed native
-composition remains unchanged. The next native gate is bounded payload framing
-and private transport before any live publication integration, with tested
-loss/crash/cancellation semantics: later revocation cannot retract delivered
+composition remains unchanged. A separate inactive [synthetic payload transport](broker-synthetic-payload-transport.md)
+now tests bounded fixed native framing/private transport and discard, without
+connecting to authority or the original quarantine. Live publication binding
+and shared admission remain gates: later revocation cannot retract delivered
 bytes, and a lost receipt must not permit another delivery. Trusted real-application
 onboarding, deliberate human-wait lifetime and a controlled fixture-delivery
 experiment remain separate prerequisites. No dry receipt may activate them.
