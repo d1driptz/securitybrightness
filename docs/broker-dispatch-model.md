@@ -74,7 +74,10 @@ They do not test actual registry revocation, native peer delivery or a real
 publication boundary. The existing [fixed native dry commit](broker-native-publication-commit.md)
 continues to discard all protected bytes and keeps its original guarantees.
 
-The next integration must bind the model to the actual original source/decision,
+The separate inactive [original-source dry reservation](broker-live-dispatch-reservation.md)
+now binds this model to a current original live commit and consumes/discards its
+quarantine. It adds no payload transport or delivery. The eventual delivery
+integration must bind the model to the actual original source/decision,
 current registry authority, separate human control and a trusted recipient. It
 must serialize irreversible reserve/spend with those checks and cancellation,
 then perform bounded dispatch outside authority waits. The eventual claim must

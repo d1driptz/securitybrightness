@@ -85,11 +85,14 @@ Coordinator/bootstrap, registry/ledger, operator-port distribution, development
 checkout, runtime/OS, fixed source adapter and peer remain trusted. The logical
 application assignment comes from trusted bootstrap, not from code attestation.
 
-The separate [dispatch and loss model](broker-dispatch-model.md) now tests an
-irreversible in-memory reservation and explicitly unproven receiver claims. It
-adds no actual authority check, native dispatch or delivery. The next integration
-gate is an explicitly tested one-use publication boundary bound to original live
-authority/source and recipient, with loss/crash/cancellation semantics: later revocation cannot retract delivered
+The separate [dispatch and loss model](broker-dispatch-model.md) tests an
+irreversible in-memory reservation and explicitly unproven receiver claims.
+The new [original-source dry reservation](broker-live-dispatch-reservation.md)
+binds that model to current authority/source and recipient in the separate live
+synthetic-commit profile, and consumes/discards without delivery. This fixed native
+composition remains unchanged. The next native gate is bounded payload framing
+and private transport before any live publication integration, with tested
+loss/crash/cancellation semantics: later revocation cannot retract delivered
 bytes, and a lost receipt must not permit another delivery. Trusted real-application
 onboarding, deliberate human-wait lifetime and a controlled fixture-delivery
 experiment remain separate prerequisites. No dry receipt may activate them.
