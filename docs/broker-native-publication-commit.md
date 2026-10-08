@@ -99,3 +99,12 @@ onboarding, deliberate human-wait lifetime and a controlled fixture-delivery
 experiment remain separate prerequisites. No dry receipt may activate them.
 Application/AI intent does not equal human permission; SecurityBrightness remains
 the authorization and human-control boundary, not a general executor or antivirus.
+
+A separate inactive [source/native association](broker-source-native-association.md)
+preserves the exact original source envelope and associates a separately
+OS-observed fixed peer under a distinct metadata domain. It consumes/discards
+through the original reservation with fresh authority and required human control,
+then retires that new peer without payload delivery. This host remains unchanged;
+its authority-held callbacks cannot launch or wait for that separate peer. A
+deliberate resumable host rendezvous and shared poisoned admission are required
+before any delivery composition.

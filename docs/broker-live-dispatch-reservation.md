@@ -117,3 +117,12 @@ before any controlled fixture-delivery composition. Neither a dry receipt nor
 this reservation evidence may activate that composition. Application/AI intent
 does not equal human permission; SecurityBrightness remains the authorization
 and human-control boundary, not an arbitrary executor or antivirus.
+
+A separate [original-source/native association](broker-source-native-association.md)
+now composes this reservation with a distinct guarded fixed Windows metadata
+peer while preserving the original source channel unchanged. It checks both
+live channels at consume/discard and withholds zero-byte historical evidence
+until new-peer EOF, zero exit, joined cleanup and final source freshness. Its
+test rendezvous pauses the original worker outside authority callbacks; it is
+not selected by a production host and carries no payload. A deliberate host
+rendezvous and shared poisoned admission remain prerequisites before delivery.

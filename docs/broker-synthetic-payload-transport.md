@@ -110,3 +110,11 @@ or protection against direct Windows access. The existing fixture-reader claim
 is unchanged. Application/AI intent does not equal human permission, and
 SecurityBrightness remains the authorization/human-control boundary, not an
 arbitrary executor or antivirus.
+
+The separate [original-source/native association](broker-source-native-association.md)
+now tests two distinct original Windows channels, current original authority,
+required human control and exact one-use source consume/discard. Its new peer
+receives metadata only. It does not call this payload transport or establish
+source-to-application delivery. The remaining host rendezvous, shared poisoned
+admission, real-application association, human-wait and final publication/loss
+gates cannot be replaced by either primitive's historical facts.
