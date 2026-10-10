@@ -30,6 +30,7 @@ _MEANING = 'Retired inactive original-source/native association; not authority o
 _LOCK_TYPE = type(RLock())
 _Origin = namedtuple('_Origin', 'gate source lock cancel deadline grant fingerprint peer peer_lock model_lock')
 _History = namedtuple('_History', 'state started finished consumed cleanup result snapshot')
+_Channel = namedtuple('_Channel', 'child lock api owned anchors seals observation values wire wire_lock wire_identity retirement')
 
 
 class SourceNativeAssociationError(RuntimeError):
@@ -85,6 +86,7 @@ class SourceNativeAssociationDryRun:
             self._lock, self._cancel = origin.lock, origin.cancel
             self._deadline = origin.deadline
             self._child = self._issued_child = self._native_observation = None
+            self._channel = self._issued_channel = self._recovery_channel = None
             self._result = self._issued_result = None
             self._save('new', False, False, False, False)
             self._source_current('new')
@@ -107,6 +109,11 @@ class SourceNativeAssociationDryRun:
         return self._recover(tuple(getattr(self, name, None) for name in
             ('_history', '_issued_history', '_recovery_history')), _History)
 
+    def _channel_original(self):
+        aliases = tuple(getattr(self, name, None) for name in ('_channel', '_issued_channel', '_recovery_channel'))
+        if all(value is None for value in aliases): return None
+        return self._recover(aliases, _Channel)
+
     def _save(self, state, started, finished, consumed, cleanup, *, result=None, snapshot=None):
         history = _History(state, started, finished, consumed, cleanup, result, snapshot)
         self._history = self._issued_history = self._recovery_history = history
@@ -117,6 +124,17 @@ class SourceNativeAssociationDryRun:
 
     def _structural_identity(self, original):
         history = self._status()
+        channel = self._channel_original()
+        if channel is None and (history.state == 'associated_discarded' or any(
+                getattr(self, name, None) is not None for name in ('_child', '_issued_child', '_native_observation'))):
+            raise SourceNativeAssociationError('missing_association_channel')
+        if channel is not None and (any(getattr(self, name, None) is not channel for name in
+                ('_channel', '_issued_channel', '_recovery_channel'))
+                or self._child is not channel.child or self._issued_child is not channel.child
+                or self._native_observation is not channel.observation):
+            raise SourceNativeAssociationError('changed_association_channel')
+        if channel is not None:
+            self._channel_codec_current(channel, retired=history.finished)
         if (any(getattr(self, name, None) is not original for name in
                 ('_origin', '_issued_origin', '_recovery_origin'))
                 or any(getattr(self, name, None) is not history for name in
@@ -136,6 +154,23 @@ class SourceNativeAssociationDryRun:
                 or original.source.model_ledger._issued_lock is not original.model_lock):
             raise SourceNativeAssociationError('changed_association_owner')
         return history
+
+    @staticmethod
+    def _channel_codec_current(channel, *, retired=False):
+        wire = channel.wire
+        if (type(wire) is not SourceRecipientAssociationExchange
+                or wire._lock is not channel.wire_lock or wire._issued_lock is not channel.wire_lock
+                or tuple((type(value), value) for value in (wire._role, wire._role_snapshot,
+                    wire._session, wire._session_snapshot, wire._key_snapshot)) != channel.wire_identity):
+            raise SourceNativeAssociationError('changed_association_codec')
+        if retired:
+            if (not SourceNativeAssociationDryRun._codec_retired(wire, channel.wire_lock)
+                    or type(wire._phase_snapshot) is not tuple or len(wire._phase_snapshot) != 3
+                    or tuple(type(value) for value in wire._phase_snapshot) != (int, str, str)
+                    or type(wire._previous) is not str
+                    or wire._phase_snapshot != (4, wire._previous, 'closed')
+                    or (channel.retirement is not None and wire._phase_snapshot != channel.retirement)):
+                raise SourceNativeAssociationError('changed_association_codec_retirement')
 
     def _identity(self, original):
         history = self._structural_identity(original)
@@ -311,6 +346,11 @@ class SourceNativeAssociationDryRun:
                     or type(observation) is not ProcessChannelObservation):
                 raise SourceNativeAssociationError('invalid_association_channel')
             observation_snapshot = (type(observation.pid), observation.pid, type(observation.creation_time), observation.creation_time)
+            self._channel = self._issued_channel = self._recovery_channel = _Channel(
+                child, native_lock, native_api, child_owned, child_anchors, child_seals,
+                observation, observation_snapshot, wire, wire_lock,
+                tuple((type(value), value) for value in (wire._role, wire._role_snapshot,
+                    wire._session, wire._session_snapshot, wire._key_snapshot)), None)
             if not native_lock.acquire(blocking=False): raise SourceNativeAssociationError('busy_association_channel')
             try:
                 if child._observe() is not observation: raise SourceNativeAssociationError('changed_association_channel')
@@ -447,6 +487,15 @@ class SourceNativeAssociationDryRun:
             ack = wire_call(wire.accept_ack, receipt_frame)
             if type(ack) is not SourceRecipientAssociationEvidence or _facts(ack) != expected[:2]+((str, 'associated_retired'), (int, 0), (str, _WIRE_MEANING)):
                 raise SourceNativeAssociationError('association_receipt_mismatch')
+            retirement = (4, hashlib.sha256(receipt_frame).hexdigest(), 'closed')
+            if (type(wire._phase_snapshot) is not tuple
+                    or tuple(type(value) for value in wire._phase_snapshot) != (int, str, str)
+                    or wire._phase_snapshot != retirement):
+                raise SourceNativeAssociationError('association_receipt_transcript_mismatch')
+            with original.lock:
+                self._identity(original)
+                channel = self._channel_original()._replace(retirement=retirement)
+                self._channel = self._issued_channel = self._recovery_channel = channel
             check(retiring=True)
             candidate = SourceNativeAssociationEvidence(envelope, hashlib.sha256(envelope).hexdigest())
             if type(candidate) is not SourceNativeAssociationEvidence or _facts(candidate) != expected:

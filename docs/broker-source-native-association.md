@@ -134,12 +134,19 @@ shipped. Existing production paths and test assertions were unchanged; runtime
 `security_events.json` is excluded.
 
 Before a controlled generated-fixture delivery experiment, the remaining gates
-are a deliberate resumable host rendezvous with bounded shared poisoned
+include a full generated-fixture host composition with bounded shared poisoned
 admission, trusted real-application association, a deliberate bounded human-wait
 profile, and exact original-source/native-recipient payload publication and loss
 handling. The irreversible publication boundary must preserve current authority,
 separate human control and exact resource/effect binding. Lost receipts must not
 permit another delivery; later revocation cannot retract bytes already visible.
+
+The separate [inactive two-worker rendezvous](broker-source-rendezvous.md) now
+implements a fixed outside-authority witness pause and retains shared admission
+through both joins and final cleanup/freshness checks. It starts from an already
+cleaned source and is not selected by existing hosts. Its original-channel archive
+also preserves codec/session/transcript identity after native retirement. This
+does not activate payload publication or cover earlier fixture acquisition.
 
 This milestone establishes a native metadata association and original one-use
 consume/discard, not application delivery, immutable contents or protection
