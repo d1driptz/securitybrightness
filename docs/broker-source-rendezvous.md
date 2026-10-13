@@ -106,6 +106,15 @@ lost-receipt, expiry and revocation semantics; no retry may duplicate a possibly
 observable delivery. Only a later controlled fixture experiment can establish
 that boundary. Historical discard facts cannot activate it.
 
+An inactive [logical-source custody prerequisite](broker-source-admission.md)
+now retains that same slot across synthetic source/review/acquisition and a
+private retained-admission profile of this rendezvous. Its absolute deadline
+cap can only shorten the original lifetime; standalone admission is unchanged.
+The original native fixture child and human-wait composition remain unresolved.
+Forced cancellation cleanup accepts the original typed `(exit, input_closed)`
+snapshot with all original handles closed. Successful association still
+separately requires input retirement and zero exit.
+
 The existing fixture protected-reader path remains the narrow enforcement claim.
 This primitive proves neither payload delivery, immutable contents, durable/global
 at-most-once behavior, installed application identity nor prevention of direct

@@ -50,6 +50,9 @@ class SourceAssociationRendezvousDryRun:
     Neither a worker result nor a cleanup boolean releases admission. Unknown
     thread/native/local cleanup leaves the captured shared slot poisoned.
     """
+    def _admission_deadline_cap(self):
+        return None
+
     def __init__(self, lifecycle, *, timeout=5):
         if type(lifecycle) is not LivePublicationDraft:
             raise TypeError('expected exact cleaned publication lifecycle')
@@ -87,6 +90,11 @@ class SourceAssociationRendezvousDryRun:
         self._slot_owned_function = Condition._is_owned
         deadline = min(monotonic()+timeout, source._source_deadline_snapshot,
             recipient._deadline_snapshot, source._wire._deadline_snapshot)
+        cap = self._admission_deadline_cap()
+        if cap is not None:
+            if type(cap) is not float or not math.isfinite(cap):
+                raise SourceRendezvousError('invalid_admission_deadline_cap')
+            deadline = min(deadline, cap)  # A private outer owner may only shorten.
         owner = _Owner(source, recipient, acquisition, review, source._owned_buffer, source._recipient_descriptor,
             locks, fields, review._lease, deadline, RLock(), Event(), slot, slot._cond, slot._cond._lock, slot._cond.notify)
         self._origin = self._issued_origin = self._recovery_origin = owner
@@ -375,7 +383,10 @@ class SourceAssociationRendezvousDryRun:
                     or type(child._input_closed) is not bool
                     or type(child._retired_snapshot) is not tuple or len(child._retired_snapshot) != 2
                     or type(child._retired_snapshot[0]) is not int or type(child._retired_snapshot[1]) is not bool
-                    or child._retired_snapshot != (child._exit, True)
+                    # Forced cancellation may close the original handles before
+                    # protocol input retirement. This is cleanup, not a success
+                    # receipt; _final_current separately requires input EOF/0.
+                    or child._retired_snapshot != (child._exit, child._input_closed)
                     or type(child.stdin_fd) is not int or child.stdin_fd != native.owned[0]
                     or type(child.stdout_fd) is not int or child.stdout_fd != native.owned[1]
                     or type(child.pid) is not int or child.pid != native.values[1]):
