@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Security Brightness</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Experimental local text-pattern review tool from SecurityBrightness. Not a malware scanner.">
+  <title>Experimental Scanner — SecurityBrightness</title>
   <style>
     body {
       margin: 0;
@@ -264,10 +267,15 @@
         grid-template-columns: 1fr;
       }
     }
+    .site-navigation { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 13px 24px; background: #0b1220; color: #f4f7fb; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 600 14px Arial, sans-serif; }
+    .site-navigation a { color: #b5f0e1; text-decoration: none; }
+    .site-navigation a:focus-visible { outline: 3px solid #b5f0e1; outline-offset: 3px; }
+    @media (max-width: 480px) { .wrapper { padding: 12px; } .card { padding: 18px; } .hero { padding: 22px 18px 12px; } }
   </style>
 </head>
 
 <body>
+<nav class="site-navigation" aria-label="Website navigation"><span>SecurityBrightness · Experimental tool</span><a href="./website-preview.html">← Back to homepage</a></nav>
 
 <div class="wrapper">
   <div class="container">
