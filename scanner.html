@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Experimental local text-pattern review tool from SecurityBrightness. Not a malware scanner.">
+  <title>Experimental Scanner — SecurityBrightness</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding-top: 100px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      font-family: Arial, sans-serif;
+      color: #0f172a;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 960px;
+      padding: 24px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 28px;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.14);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 36px 32px 16px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3rem);
+      line-height: 1.05;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      max-width: 720px;
+      margin: 18px auto 0;
+      color: #475569;
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      padding: 28px 32px;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .card:first-of-type {
+      border-top: none;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .note {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .upload-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-input {
+      flex: 1 1 260px;
+      min-width: 220px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 0.95rem;
+    }
+
+    .button {
+      min-width: 180px;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(102, 126, 234, 0.25);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill.high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .pill.medium {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .pill.low {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .results {
+      display: grid;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .result-card {
+      padding: 22px 24px;
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .result-card.high {
+      border-left: 4px solid #dc2626;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .result-card.medium {
+      border-left: 4px solid #d97706;
+      background: #fffbeb;
+      color: #92400e;
+    }
+
+    .result-card.low {
+      border-left: 4px solid #16a34a;
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    .result-card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .result-list {
+      margin: 0;
+      padding-left: 20px;
+      list-style-type: disc;
+    }
+
+    .result-list li {
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .result-text {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .result-meta {
+      font-size: 0.95rem;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .result-snippet {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      background: rgba(15, 23, 42, 0.04);
+      padding: 14px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 10px;
+    }
+
+    .suggestion {
+      font-size: 0.95rem;
+      color: #334155;
+      margin: 0 0 10px;
+    }
+
+    .issue-button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #0f172a;
+      color: white;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .issue-button:hover {
+      transform: translateY(-1px);
+      background-color: #1e293b;
+    }
+
+    .safe-state {
+      padding: 22px;
+      border-radius: 20px;
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 700;
+      border: 1px solid rgba(22, 163, 74, 0.15);
+    }
+
+    @media (max-width: 720px) {
+      .section-title,
+      .upload-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    /* Keep padding and form controls inside the viewport on narrow phones. */
+    *, *::before, *::after { box-sizing: border-box; }
+    .wrapper { min-width: 0; }
+    .container, .card, .hero, .section-title, .upload-row { min-width: 0; }
+    .file-input { max-width: 100%; min-width: 0; }
+    .section-title, .note, .result-card { overflow-wrap: anywhere; }
+    .site-navigation { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 13px 24px; background: #0b1220; color: #f4f7fb; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 600 14px Arial, sans-serif; }
+    .site-navigation a { color: #b5f0e1; text-decoration: none; }
+    .site-navigation a:focus-visible { outline: 3px solid #b5f0e1; outline-offset: 3px; }
+    @media (max-width: 480px) { body { padding-top: 120px; } .wrapper { padding: 12px; } .card { padding: 18px; } .hero { padding: 22px 18px 12px; } }
+
+    /* Preview visual alignment with the SecurityBrightness homepage. */
+    body { background: #0b1323; color: #f1f5fb; }
+    .container { background: #101d30; border: 1px solid #26384c; border-radius: 18px; box-shadow: 0 20px 55px rgba(0,0,0,.18); }
+    .hero { text-align: left; padding-bottom: 26px; }
+    .hero h1 { color: #f1f5fb; background: none; -webkit-text-fill-color: currentColor; font-size: clamp(1.8rem,3vw,2.7rem); }
+    .hero p { margin: 14px 0 0; color: #b8c8d8; line-height: 1.6; }
+    .hero .note { color: #b8c8d8; }
+    .card { background: #142239; border: 1px solid #293b50; border-radius: 12px; box-shadow: none; margin: 0 16px 16px; }
+    .wrapper { box-sizing: border-box; }
+    .section-title, .section-title h2 { color: #f1f5fb; }
+    .section-title { flex-wrap: wrap; }
+    .file-input { box-sizing: border-box; min-width: 0; max-width: 100%; }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pill { min-width: 0; overflow-wrap: anywhere; }
+    .result-snippet { overflow-wrap: anywhere; }
+    @media (max-width: 480px) { .summary-grid { grid-template-columns: 1fr; } .hero { padding: 24px 18px 16px; } }
+    .card:first-of-type { border-top: 1px solid #293b50; }
+    .note { color: #b8c8d8; }
+    .file-input { background: #f8fafc; color: #152238; }
+    .button { background: #83d8c8; color: #09212b; }
+    .button:hover { box-shadow: 0 10px 24px rgba(131,216,200,.16); }
+    .button:focus-visible, .file-input:focus-visible { outline: 3px solid #83d8c8; outline-offset: 3px; }
+    .site-navigation { border-bottom: 1px solid #293b50; }
+    .result-card { color: #152238; }
+    @media (max-width: 720px) {
+      .upload-row { gap: 12px; }
+      .file-input { flex: 0 1 auto; width: 100%; min-height: 54px; }
+      .button { width: 100%; }
+      .card { margin: 0 10px 12px; }
+    }
+  </style>
+</head>
+
+<body>
+<nav class="site-navigation" aria-label="Website navigation"><span>SecurityBrightness · Experimental tool</span><a href="./index.html">← Return to main website</a></nav>
+
+<div class="wrapper">
+  <div class="container">
+    <div class="hero">
+      <h1>SecurityBrightness</h1>
+      <p>Text security pattern review — prototype</p>
+      <p class="note">Local heuristics, not an AI model or malware scan. Matches need human review; no matches do not prove safety. Files are not modified.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <h2>Select a local text file</h2>
+        <span class="note">Supported: .txt, .log, .js — maximum 1 MiB</span>
+      </div>
+      <div class="upload-row">
+        <input id="fileInput" class="file-input" type="file" accept=".txt,.log,.js,text/plain,application/javascript" />
+        <button type="button" class="button" onclick="scan()">Scan file contents</button>
+      </div>
+      <div id="fileStatus" class="note" role="status" aria-live="polite" aria-atomic="true" style="margin-top: 12px;">Select a file and click Scan.</div>
+    </div>
+
+    <div class="card" id="summaryCard">
+      <div class="section-title">
+        <h2>Summary</h2>
+        <span class="note" id="summaryNote" role="status" aria-live="polite" aria-atomic="true">Select a file to start a local pattern review.</span>
+      </div>
+      <div class="summary-grid" id="summary"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <h2>Scan results</h2>
+        <span class="note">Heuristic patterns are grouped by review priority, with locations and redacted evidence. Matches may be benign; credential validity and threat severity are not verified.</span>
+      </div>
+      <div id="result" class="results" aria-label="Pattern review findings"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MAX_FILE_BYTES = 1024 * 1024;
+let scanGeneration = 0;
+let scanState = { text: "", highRisk: {}, mediumRisk: {}, lowRisk: {}, dismissed: 0 };
+
+function updateFileStatus() {
+  const fileInput = document.getElementById("fileInput");
+  const fileStatus = document.getElementById("fileStatus");
+  const file = fileInput.files[0];
+  fileStatus.textContent = file ? `Selected file: ${file.name}` : "Select a file and click Scan.";
+}
+
+function scan() {
+  const generation = ++scanGeneration;
+  scanState = { text: "", highRisk: {}, mediumRisk: {}, lowRisk: {}, dismissed: 0 };
+  const fileInput = document.getElementById("fileInput");
+  const file = fileInput.files[0];
+  const resultArea = document.getElementById("result");
+  const summaryArea = document.getElementById("summary");
+  const summaryNote = document.getElementById("summaryNote");
+  const fileStatus = document.getElementById("fileStatus");
+
+  resultArea.innerHTML = "";
+  summaryArea.innerHTML = "";
+  summaryNote.textContent = "Scanning...";
+  updateFileStatus();
+
+  if (!file) {
+    summaryNote.textContent = "Select a file before scanning.";
+    resultArea.innerHTML = `<div class="result-card high"><h3>No file selected</h3><p>Please select a .txt, .log, or .js file to review its contents locally.</p></div>`;
+    return;
+  }
+
+  if (!/\.(txt|log|js)$/i.test(file.name) || file.size > MAX_FILE_BYTES) {
+    summaryNote.textContent = "Not analyzed: select a .txt, .log, or .js file no larger than 1 MiB.";
+    return;
+  }
+
+  fileStatus.textContent = `Selected file: ${file.name}`;
+
+  const startTime = Date.now();
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    if (generation !== scanGeneration) return;
+    analyzeText(event.target.result, file.name, startTime);
+  };
+  reader.onerror = function() {
+    if (generation !== scanGeneration) return;
+    summaryNote.textContent = "Unable to read the selected file.";
+    fileStatus.textContent = "File read failed.";
+    resultArea.innerHTML = `<div class="result-card high"><h3>Read error</h3><p>Unable to read the selected file. Try another file.</p></div>`;
+  };
+  reader.readAsText(file);
+}
+
+function getLineColumn(text, index) {
+  const before = text.slice(0, index);
+  const lines = before.split(/\r\n|\n/);
+  return {
+    line: lines.length,
+    column: lines[lines.length - 1].length + 1,
+  };
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, function(match) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[match];
+  });
+}
+
+function reportMatch(state, severity, message, match, suggestion) {
+  if (!state[severity][message]) {
+    state[severity][message] = { suggestion, matches: [], count: 0 };
+  }
+  state[severity][message].count++;
+  if (state[severity][message].matches.length < 5) {
+    const position = getLineColumn(state.text, match.index);
+    state[severity][message].matches.push({
+      line: position.line,
+      column: position.column,
+      snippet: "[Matched text withheld to avoid exposing sensitive contents]",
+    });
+  }
+}
+
+function analyzeText(text, fileName, startTime = Date.now()) {
+  scanState = { text: "", highRisk: {}, mediumRisk: {}, lowRisk: {}, dismissed: 0 };
+  if (typeof text !== "string" || text.length > MAX_FILE_BYTES || text.includes("\u0000")) {
+    document.getElementById("summaryNote").textContent = "Not analyzed: unsupported or oversized text input.";
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("summary").innerHTML = "";
+    return;
+  }
+  scanState.text = text;
+  const scanText = text;
+
+  const patterns = [
+    { regex: /\bsk-[A-Za-z0-9]{48}\b/g, severity: 'highRisk', message: 'OpenAI API key detected.', suggestion: 'Move this key to secure storage and rotate it immediately.' },
+    { regex: /\b(?:AKIA|ASIA|AGPA|AIDA)[0-9A-Z]{16}\b/g, severity: 'highRisk', message: 'AWS access key detected.', suggestion: 'Remove this key from source control and use IAM roles or environment variables.' },
+    { regex: /\bAIza[0-9A-Za-z-_]{35}\b/g, severity: 'highRisk', message: 'Google API key detected.', suggestion: 'Restrict or rotate this key and avoid hardcoding it.' },
+    { regex: /\b(?:ghp_|github_pat_)[A-Za-z0-9_]{36,255}\b/g, severity: 'highRisk', message: 'GitHub personal access token detected.', suggestion: 'Revoke this token and store credentials outside of code.' },
+    { regex: /\bsk_test_[A-Za-z0-9]{24}\b/g, severity: 'highRisk', message: 'Stripe test key detected.', suggestion: 'Remove payment API keys from checked-in files.' },
+    { regex: /\bsk_live_[A-Za-z0-9]{24}\b/g, severity: 'highRisk', message: 'Stripe live key detected.', suggestion: 'Remove live keys from source and use safe configuration management.' },
+    { regex: /\beyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/g, severity: 'highRisk', message: 'JWT token pattern detected.', suggestion: 'Remove tokens from source and secure them separately.' },
+    { regex: /(?:api[_-]?key|access[_-]?key|secret|token|password|pwd|pass|client[_-]?secret)\s*(?:=|:)\s*['"][A-Za-z0-9\-_=]{16,}['"]/gi, severity: 'highRisk', message: 'Hardcoded credential or secret detected.', suggestion: 'Replace this with a secure value reference and remove it from code.' },
+    { regex: /-----BEGIN (?:RSA |OPENSSH )?PRIVATE KEY-----/g, severity: 'highRisk', message: 'Private-key header pattern matched.', suggestion: 'Review whether this is key material; keep private keys out of shared files.' },
+    { regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, severity: 'mediumRisk', message: 'Email address detected.', suggestion: 'Remove personal email addresses from shared files.' },
+    { regex: /\b[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?]{12,}\b/g, severity: 'mediumRisk', message: 'Strong password-like string detected.', suggestion: 'Avoid embedding passwords; use a secret manager instead.', filter: (value, match, text) => /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /\b(?:password|token|key|secret|api_key|access_key|client_secret|auth|credential)\b/i.test(text.slice(Math.max(0, match.index-100), match.index + value.length + 100)) && !/\b(?:transform|background|color|font|margin|padding|border|width|height|px|em|rem|vh|vw|<|>|'|"|class|id|style)\b/i.test(text.slice(Math.max(0, match.index-50), match.index + value.length + 50)) },
+    { regex: /(https?:\/\/[^"]+)\?[^&\s]*\b(?:key|token|secret|password|api_key|auth)\b[^&\s]*/gi, severity: 'mediumRisk', message: 'URL with sensitive parameters detected.', suggestion: 'Move secrets out of URL query strings.' },
+    { regex: /\b(?:ssn|social security|credit card|ccv|cvv|dob|date of birth)\b/g, severity: 'highRisk', message: 'Potential sensitive personal data detected.', suggestion: 'Review and remove any personal identifiers from shared data.' },
+    { regex: /\b\+?\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, severity: 'mediumRisk', message: 'Phone number detected.', suggestion: 'Avoid storing phone numbers in plain text within source files.' },
+    { regex: /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, severity: 'mediumRisk', message: 'IP address detected.', suggestion: 'Verify whether this IP address should be publicly exposed.' },
+    { regex: /ignore previous instructions|disregard (?:the )?above|forget (?:the )?above|override.*policy|bypass.*safety/gi, severity: 'highRisk', message: 'Prompt injection pattern detected.', suggestion: 'Do not let untrusted text override intended behavior.' },
+    { regex: /\b(?:\.env|dotenv|credentials?)\b/g, severity: 'lowRisk', message: 'Check whether secrets are stored in environment files and avoid leaking .env content.', suggestion: 'Keep credentials in protected environment variables, not in source files.' },
+    { regex: /\b(?:execute|run|search the web|open file|send email|download|upload|delete|install)\b/g, severity: 'lowRisk', message: 'Review tool access and command execution instructions carefully.', suggestion: 'Confirm that tool and command references are safe and intentional.' },
+    { regex: /(?:system|assistant) instructions?.*user input|user input?.*system instructions/gi, severity: 'lowRisk', message: 'Keep user input separate from system instructions to reduce prompt injection risk.', suggestion: 'Keep system-level guidance distinct from user-provided content.' },
+    { regex: /(https?:\/\/[^"]+)\b/g, severity: 'lowRisk', message: 'Verify whether referenced URLs expose internal or private resources.', suggestion: 'Check whether the referenced address should remain internal only.', filter: value => /\b(?:localhost|127\.0\.0\.1|internal|private)\b/.test(value.toLowerCase()) },
+  ];
+
+  patterns.forEach(pattern => {
+    pattern.regex.lastIndex = 0;
+    let match;
+    while ((match = pattern.regex.exec(scanText)) !== null) {
+      const value = match[0];
+      if (pattern.filter && !pattern.filter(value, match, scanText)) {
+        continue;
+      }
+      reportMatch(scanState, pattern.severity, pattern.message, match, pattern.suggestion);
+      if (match.index === pattern.regex.lastIndex) {
+        pattern.regex.lastIndex++;
+      }
+    }
+  });
+
+  scanState.text = "";
+  scanState.fileName = fileName;
+  scanState.scanTime = Math.max(0, Date.now() - (startTime || Date.now()));
+  displayResults(scanState);
+}
+
+function displayResults({ highRisk, mediumRisk, lowRisk, dismissed = 0, fileName = '', scanTime = 0 }) {
+  const resultArea = document.getElementById("result");
+  const summaryArea = document.getElementById("summary");
+  const summaryNote = document.getElementById("summaryNote");
+  const total = Object.keys(highRisk).length + Object.keys(mediumRisk).length + Object.keys(lowRisk).length;
+
+  const occurrences = [highRisk, mediumRisk, lowRisk].flatMap(group => Object.values(group)).reduce((sum, item) => sum + item.count, 0);
+  summaryNote.textContent = `${total} visible pattern groups; ${occurrences} visible rule matches; ${dismissed} groups dismissed. File: ${fileName}. Read + analysis: ${scanTime} ms. Not a safety verdict.`;
+  summaryArea.innerHTML = `
+    <span class="pill high">High ${Object.keys(highRisk).length}</span>
+    <span class="pill medium">Medium ${Object.keys(mediumRisk).length}</span>
+    <span class="pill low">Low ${Object.keys(lowRisk).length}</span>
+  `;
+
+  let html = "";
+  html += renderCategory("high", "High-priority patterns", highRisk);
+  html += renderCategory("medium", "Medium-priority patterns", mediumRisk);
+  html += renderCategory("low", "Low-priority patterns", lowRisk);
+
+  if (!html) {
+    html = `<div class="result-card low"><h3>No visible pattern groups</h3><p>This is not proof of safety. Dismissal does not repair or modify the file. Review limitations and rescan after any edits.</p></div>`;
+  }
+
+  resultArea.innerHTML = html;
+}
+
+function renderCategory(style, title, items) {
+  const keys = Object.keys(items);
+  if (!keys.length) return "";
+  return `
+    <div class="result-card ${style}">
+      <h3>${title} (${keys.length})</h3>
+      <ul class="result-list">
+        ${keys.map(message => {
+          const item = items[message];
+          const matchCount = item.count;
+          const lines = [...new Set(item.matches.map(m => m.line))].join(', ');
+          const extra = matchCount > item.matches.length ? ' (showing first 5 locations)' : '';
+          return `
+            <li>
+              <div class="result-text">Heuristic rule: ${escapeHtml(message)} (${matchCount} matches)</div>
+              <div class="result-meta">Lines: ${lines}${extra}</div>
+              ${item.matches.slice(0, 1).map(m => `<div class="result-snippet">Example match: "${escapeHtml(m.snippet)}"</div>`).join('')}
+              <p class="suggestion">If review confirms sensitive content: ${escapeHtml(item.suggestion)}</p>
+              <button type="button" class="issue-button" data-severity="${style}Risk" data-message="${encodeURIComponent(message)}">Dismiss group from view</button>
+            </li>
+          `;
+        }).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function removeIssue(severity, encodedMessage) {
+  if (!["highRisk", "mediumRisk", "lowRisk"].includes(severity) || typeof encodedMessage !== "string") return;
+  let message;
+  try { message = decodeURIComponent(encodedMessage); } catch { return; }
+  if (!scanState[severity] || !scanState[severity][message]) return;
+  delete scanState[severity][message];
+  scanState.dismissed++;
+  displayResults(scanState);
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+  const fileInput = document.getElementById("fileInput");
+  fileInput.addEventListener("change", updateFileStatus);
+  updateFileStatus();
+
+  const resultArea = document.getElementById("result");
+  resultArea.addEventListener("click", function(event) {
+    const button = event.target.closest(".issue-button");
+    if (!button) return;
+    removeIssue(button.dataset.severity, button.dataset.message);
+  });
+});
+</script>
+
+</body>
+</html>
+
+
+
