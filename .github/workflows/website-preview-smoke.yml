@@ -33,3 +33,16 @@ jobs:
           path: website-review-screenshots/*.png
           if-no-files-found: warn
           retention-days: 14
+      - name: Test isolated release candidate in Chromium
+        env:
+          WEBSITE_RELEASE_CANDIDATE: '1'
+          WEBSITE_CAPTURE_SCREENSHOTS: '1'
+        run: python tools/website_smoke.py
+      - name: Upload release candidate screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-release-candidate-screenshots
+          path: website-release-screenshots/*.png
+          if-no-files-found: warn
+          retention-days: 14
