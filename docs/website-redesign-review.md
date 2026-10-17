@@ -36,3 +36,17 @@ Branch: `website-redesign-preview`
 5. Verify deployed GitHub Pages site and scanner after publication.
 
 Do not merge the entire development branch into the publishing branch merely to release the website; isolate website-only changes. Do not modify authorization core, audit/runtime files or broker code as part of the website release.
+
+## Automated browser smoke-test harness
+
+A website-only Playwright script is available at `tools/website_smoke.py`. On a machine with Python and Chromium Playwright support:
+
+```bash
+python -m pip install playwright
+python -m playwright install chromium
+python tools/website_smoke.py
+```
+
+The script opens the preview and scanner directly from the local checkout, checks navigation and horizontal overflow at 320, 375, 390, 768, 1024 and 1440 pixels, and fails on JavaScript page errors. It does **not** establish that scanning actual uploaded files works correctly, cover Safari, or substitute for visual/accessibility review. A successful run must be recorded before treating browser QA as passed.
+
+**Status:** The harness has been committed but has not yet been run against a local checkout of these GitHub files. Browser QA is still pending.
