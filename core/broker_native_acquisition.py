@@ -43,9 +43,17 @@ class _Description:
 class _NativeReadFixture:
     """Own only the fixed fixture's original exclusive read/write handle."""
     def __init__(self):
+        self._initialize_fixed_fixture(monotonic()+5)
+
+    def _initialize_fixed_fixture(self, deadline):
+        """Private allocation shared by separately fixed lifetime profiles.
+
+        Callers are trusted constructors, never requester-selected lifetimes.
+        The original constructor continues to create a fresh five-second owner.
+        """
         self._fd = self._issued_fd = self._issued_handle = None
         self._closed = self._attempted = self._cleanup_failed = False
-        self._deadline = monotonic()+5
+        self._deadline = deadline
         try:
             self._native = _Native()
             registry, owner, token = (secrets.token_hex(32) for _ in range(3))

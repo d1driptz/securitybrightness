@@ -89,10 +89,14 @@ target phase was reached. The combined focused suite passed 250 tests in
 [the development log](DEVELOPMENT_LOG.md). The workspace-only Windows temporary
 directory ACL harness is not shipped. Runtime `security_events.json` is excluded.
 
-The next gate is a deliberate bounded human-wait acquisition profile. This
-diagnostic retains the exact five-second acquisition contract; it does not
-accept the separate 30-second desktop-review subclass or silently extend any
-original resource deadline. It is not yet an interactive owner demonstration.
+A separate [bounded-wait native prerequisite](broker-wait-native-profile.md) now
+defines distinct wait/acquisition lifetimes and a fixed new fixture child. This
+source host does not select it: deliberately composing exact-resource human
+review, current registry/lifecycle state and original admission across those
+lifetimes remains a separate gate. This diagnostic retains its exact five-second
+contract; it does not accept the separate 30-second desktop-review subclass or
+silently extend any original resource deadline. It is not yet an interactive
+owner demonstration.
 
 Trusted cooperating-application association and exact original-source/native-
 recipient payload publication remain separate gates. Before controlled delivery,
