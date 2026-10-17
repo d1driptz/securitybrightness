@@ -17,12 +17,12 @@ Branch: `website-redesign-preview`
 - Homepage anchor navigation accounts for the sticky header.
 - No live product download or unsupported “protected” status is offered.
 
-## Still to verify in an actual browser
-- At narrow phone widths (320, 375, 390px), no horizontal overflow, overlap or clipped controls.
-- At desktop widths (768, 1024, 1440px), cards, navigation and hero remain readable.
+## Remaining visual, accessibility and release verification
+- Visually inspect narrow phone widths (320, 375, 390px) for overlap and clipped controls; automated horizontal-overflow checks passed in Chromium.
+- Visually inspect desktop widths (768, 1024, 1440px) for card, navigation and hero readability; automated horizontal-overflow checks passed in Chromium.
 - Keyboard navigation order, visible focus and screen reader headings/landmarks.
 - Text contrast and zoom at 200%.
-- Scanner select-file, no-file, invalid extension, file size, match and no-match paths.
+- Scanner file-size limit, no-match path and additional match types; no-file, synthetic private-key match and invalid extension paths passed automated Chromium checks.
 - Scanner dismissal behaviour and safety of rendered filenames and excerpts.
 - Navigation and external documentation links.
 - Browser console errors, including mobile Safari.
@@ -47,6 +47,6 @@ python -m playwright install chromium
 python tools/website_smoke.py
 ```
 
-The script opens the preview and scanner directly from the local checkout, checks navigation and horizontal overflow at 320, 375, 390, 768, 1024 and 1440 pixels, and fails on JavaScript page errors. It does **not** establish that scanning actual uploaded files works correctly, cover Safari, or substitute for visual/accessibility review. A successful run must be recorded before treating browser QA as passed.
+The script opens the preview and scanner directly from the local checkout, checks navigation and horizontal overflow at 320, 375, 390, 768, 1024 and 1440 pixels, and fails on JavaScript page errors. It exercises synthetic browser file uploads for one private-key header match and an invalid extension, but does **not** establish comprehensive scanner correctness, cover Safari, or substitute for visual/accessibility review.
 
-**Status:** The harness has been committed but has not yet been run against a local checkout of these GitHub files. Browser QA is still pending.
+**Status:** GitHub Actions workflow run #3 passed on commit `17b58c7` (as confirmed by the repository owner's GitHub Actions screenshots). The run exercised the smoke-test script version present at that commit, including six Chromium viewport widths, navigation, JavaScript errors, no-file handling, synthetic private-key detection and invalid extension rejection. The later diagnostics-only test-script change was not part of that run. Visual inspection, Safari, deeper scanner checks and owner approval remain pending.
