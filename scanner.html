@@ -269,6 +269,12 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Keep padding and form controls inside the viewport on narrow phones. */
+    *, *::before, *::after { box-sizing: border-box; }
+    .wrapper { min-width: 0; }
+    .container, .card, .hero, .section-title, .upload-row { min-width: 0; }
+    .file-input { max-width: 100%; min-width: 0; }
+    .section-title, .note, .result-card { overflow-wrap: anywhere; }
     .site-navigation { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 13px 24px; background: #0b1220; color: #f4f7fb; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 600 14px Arial, sans-serif; }
     .site-navigation a { color: #b5f0e1; text-decoration: none; }
     .site-navigation a:focus-visible { outline: 3px solid #b5f0e1; outline-offset: 3px; }
