@@ -1,9 +1,11 @@
-"""Inactive logical-source admission custody; no fixture launcher or delivery.
+"""Inactive original-source admission custody; no delivery.
 
 Trusted bootstrap owns the exact logical source and synthetic adapter transitions.
 One original shared slot stays held across those transitions and a fixed private
-two-worker rendezvous. Native fixture acquisition and human-wait composition are
-NOT implemented here. No requester flag, cleanup callback or permission exists.
+two-worker rendezvous. A separate fixed fixture host can attach its exact private
+native stage before review, retaining its original cleanup through final release.
+Human-wait composition remains separate. No requester flag, cleanup callback or
+permission exists.
 """
 from collections import deque, namedtuple
 from contextlib import contextmanager, ExitStack
@@ -27,12 +29,13 @@ from .registry import ApplicationRegistry
 from .registry_bound_review import RegistryBoundFileReadReviews
 
 _RLOCK, _LOCK, _SLOT = type(RLock()), type(Lock()), type(BoundedSemaphore(1))
-_Owner = namedtuple('_Owner', 'custody lock cancel deadline thread ident slot condition slot_lock waiters notify notify_function is_owned owned_function source_seen review_seen wire_seen handoff_seen retired')
+_Owner = namedtuple('_Owner', 'custody lock cancel deadline thread ident slot condition slot_lock waiters notify notify_function is_owned owned_function source_seen review_seen wire_seen handoff_seen retired fixture_seen')
 _Source = namedtuple('_Source', 'source acquisition review recipient registry ledger fields locks descriptor descriptor_snapshot recipient_timer recipient_finished recipient_deadline')
 _Review = namedtuple('_Review', 'timer finished lease deadline ticket ticket_snapshot draft_id proposal proposal_snapshot app app_snapshot draft_snapshot identity')
 _Wire = namedtuple('_Wire', 'wire lock buffer deadline timer finished')
 _Status = namedtuple('_Status', 'stage acquired bound begun wire_seen attempted claimed returned cleanup released poisoned gate gate_owner seal result snapshot')
 _Link = namedtuple('_Link', 'gate custody owner source gate_owner')
+_Fixture = namedtuple('_Fixture', 'stage origin')
 
 
 class SourceAdmissionError(RuntimeError):
@@ -60,12 +63,14 @@ class _SourceAdmissionCustody:
         owner = _Owner(self, RLock(), Event(), monotonic()+timeout, current_thread(), current_thread().ident,
             slot, slot._cond, slot._cond._lock, slot._cond._waiters, slot._cond.notify,
             Condition.notify, slot._cond.__dict__.get('_is_owned'), Condition._is_owned,
-            Event(), Event(), Event(), Event(), Event())
+            Event(), Event(), Event(), Event(), Event(), Event())
         self._origin = self._issued_origin = self._recovery_origin = owner
         self._lock, self._cancel, self._deadline = owner.lock, owner.cancel, owner.deadline
         self._source = self._issued_source = self._recovery_source = None
         self._review = self._issued_review = self._recovery_review = None
         self._wire = self._issued_wire = self._recovery_wire = None
+        self._fixture = self._issued_fixture = self._recovery_fixture = None
+        self._fixture_stage = self._issued_fixture_stage = self._recovery_fixture_stage = None
         self._save('new')
 
     @staticmethod
@@ -128,6 +133,17 @@ class _SourceAdmissionCustody:
             raise SourceAdmissionError('rolled_back_admission_history')
         source = self._archive('source', _Source)
         review, wire = self._archive('review', _Review), self._archive('wire', _Wire)
+        fixture = self._archive('fixture', _Fixture)
+        if (owner.fixture_seen.is_set() is not (fixture is not None)
+                or any(getattr(self, name, None) is not (None if fixture is None else fixture.stage)
+                    for name in ('_fixture_stage', '_issued_fixture_stage', '_recovery_fixture_stage'))):
+            raise SourceAdmissionError('missing_original_fixture_stage')
+        if fixture is not None:
+            from .broker_source_fixture_stage import _SourceFixtureStage
+            if (type(fixture.stage) is not _SourceFixtureStage
+                    or _SourceFixtureStage._original(fixture.stage) is not fixture.origin):
+                raise SourceAdmissionError('changed_original_fixture_stage')
+            _SourceFixtureStage._identity(fixture.stage, active=False)
         if (history.bound is not (source is not None) or history.begun is not (review is not None)
                 or history.wire_seen is not (wire is not None)):
             raise SourceAdmissionError('missing_admission_archive')
@@ -227,8 +243,8 @@ class _SourceAdmissionCustody:
                 (source, ('_lock', '_acquisition', '_review', '_recipient')),
                 (acquisition, ('_lock', '_review')), (recipient, ('_lock',)),
                 (review, ('_lock', '_registry', '_ledger', '_reviews', '_exchange')),
-                (review._registry, ('_lock',)), (review._ledger, ('_lock',)),
-                (review._reviews, ('_lock', '_registry', '_ledger')), (review._exchange, ('_lock',))) for name in names)
+                (review._registry, ('_lock',)), (review._ledger, ('_lock', '_reviews')),
+                (review._reviews, ('_lock', '_registry', '_ledger', '_pending')), (review._exchange, ('_lock',))) for name in names)
             locks = (source._lock, recipient._lock, acquisition._lock, review._lock,
                 review._reviews._lock, review._registry._lock, review._ledger._lock, review._exchange._lock)
             if (any(type(lock) is not _RLOCK for lock in locks) or type(recipient._timer) is not Timer
@@ -284,6 +300,25 @@ class _SourceAdmissionCustody:
                 self._poison()
                 raise SourceAdmissionError('review_begin_rejected') from None
 
+    def _attach_fixture_stage(self, stage):
+        # Only the fixed internal stage can participate. This is reciprocal
+        # original ownership, never a caller-selected validator/profile flag.
+        from .broker_source_fixture_stage import _SourceFixtureStage
+        with self._control(), self._guards():
+            history = self._identity(thread=True)
+            if (history.stage != 'fixture' or not history.bound or history.begun
+                    or self._original().fixture_seen.is_set() or type(stage) is not _SourceFixtureStage):
+                raise SourceAdmissionError('invalid_original_fixture_attachment')
+            origin = _SourceFixtureStage._original(stage)
+            if (origin.stage is not stage or origin.custody is not self or origin.custody_owner is not self._original()
+                    or origin.source is not self._source or origin.thread is not current_thread()):
+                raise SourceAdmissionError('foreign_original_fixture_attachment')
+            value = _Fixture(stage, origin)
+            self._fixture = self._issued_fixture = self._recovery_fixture = value
+            self._fixture_stage = self._issued_fixture_stage = self._recovery_fixture_stage = stage
+            self._original().fixture_seen.set()
+            self._identity(thread=True)
+
     def begin_acquisition(self, token, app, credential, proposal):
         with self._control(), self._guards():
             history = self._identity(thread=True)
@@ -334,6 +369,10 @@ class _SourceAdmissionCustody:
 
     def _cleanup_current(self):
         history = self._identity(active=False)
+        fixture = self._fixture
+        if fixture is not None:
+            from .broker_source_fixture_stage import _SourceFixtureStage
+            _SourceFixtureStage.verify_cleanup(fixture.stage)
         source, review, wire = self._source, self._review, self._wire
         if source is not None:
             if (source.source._state != 'closed' or type(source.source._state) is not str
@@ -361,6 +400,10 @@ class _SourceAdmissionCustody:
                 raise SourceAdmissionError('uncertain_admission_handoff')
             history.gate._terminal_current(history.seal, history.gate._issued_result)
             history.gate._cleanup_current()
+        if fixture is not None:
+            # Later worker retirement callbacks cannot overwrite first-child
+            # cleanup. Recheck its original archive at the end of this fence.
+            _SourceFixtureStage.verify_cleanup(fixture.stage)
         self._identity(active=False)
 
     def _terminal_current(self, sealed, candidate):
@@ -470,6 +513,9 @@ class _SourceAdmissionCustody:
                 raise SourceAdmissionError('invalid_admission_finish')
             if any(lock._is_owned() for lock in self._source.locks+(self._wire.lock,)):
                 raise SourceAdmissionError('authority_held_across_admission_wait')
+            if self._fixture is not None:
+                from .broker_source_fixture_stage import _SourceFixtureStage
+                _SourceFixtureStage.verify_handoff(self._fixture.stage)
             gate = object.__new__(_CustodiedRendezvous)
             owner.handoff_seen.set()
             self._save('constructing', attempted=True, gate=gate)

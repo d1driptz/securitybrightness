@@ -1,4 +1,5 @@
 """Real widget automation, not a completed human demonstration."""
+import gc
 import tkinter as tk
 import unittest
 from dataclasses import replace
@@ -9,12 +10,30 @@ from core.broker_operator_handoff import BrokerOperatorPrompt, BrokerOperatorErr
 
 class FixtureReviewDesktopTests(unittest.TestCase):
     def setUp(self):
+        # Tk cycles must be collected on the UI thread, before a worker starts.
+        gc.collect()
+        self.root = self.window = None
+        # Register first so this runs after the helper's channel, pool and model
+        # cleanup. Keep only this test case bound, never a window.close callback.
+        self.addCleanup(self.collect_ui)
         helpers.BrokerOperatorHandoffTests.setUp(self)
+        self.addCleanup(self.close_window)
         self.root = tk.Tk()
         self.root.withdraw()
         self.future, self.prompt = helpers.BrokerOperatorHandoffTests.start(self)
         self.window = FixtureReviewWindow(self.root, self.channel.operator, self.future)
-        self.addCleanup(self.window.close)
+
+    def close_window(self):
+        if self.window is not None:
+            self.window.close()
+        elif self.root is not None:
+            self.root.destroy()
+
+    def collect_ui(self):
+        # The original worker pool has stopped before releasing the future and
+        # Tk graph. Collect Tcl-backed variables here, not in a later worker.
+        self.future = self.prompt = self.window = self.root = None
+        gc.collect()
 
     def finish(self):
         try: self.future.result(timeout=1)

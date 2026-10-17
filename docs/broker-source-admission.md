@@ -6,11 +6,13 @@ constructing an exact NEW logical publication source, retain it throughout
 synthetic observation/review/acquisition, and hand it to a fixed private
 two-worker rendezvous. The handoff never frees and reacquires admission.
 
-This is **logical custody with two genuine Windows metadata peers**, not complete
-native fixture acquisition custody. No source fixture child is created, owned or
-joined here. Synthetic adapter frames remain trusted test orchestration, not
-proof of a file observation or an actual read. No existing host, desktop/owner
-walkthrough, protected reader, `/check` or v1 route selects this component.
+Its original profile is **logical custody with two genuine Windows metadata
+peers**. Synthetic adapter frames remain trusted test orchestration, not proof
+of a file observation or an actual read. A separate inactive fixed
+[generated-fixture host](broker-source-fixture-host.md) now attaches the first
+native fixture stage before review, retaining its original ownership checks
+through this custody's final release. No existing host, desktop/owner
+walkthrough, protected reader, `/check` or v1 route selects either profile.
 
 ## Fixed ownership and transitions
 
@@ -104,17 +106,21 @@ Full-suite verification is recorded in `DEVELOPMENT_LOG.md`. Workspace-only
 Windows temporary-directory ACL support is not shipped. Runtime
 `security_events.json` is excluded.
 
-The complete workspace suite passed **2,491 Python tests** in 603.376 seconds
-and all **8 scanner tests** in 1409.8201 ms, with no skips.
+The prior logical-only custody baseline passed **2,491 Python tests** in
+603.376 seconds and all **8 scanner tests** in 1409.8201 ms, with no skips.
+Current generated-fixture composition verification is recorded in
+`DEVELOPMENT_LOG.md` and its dedicated guide.
 
-The next composition must own and archive creation of the **first native fixture
-child** under the same admission, before observation/review/acquisition, and
-verify its original handles and cleanup before this retained rendezvous. A
-separate fixed guarded launcher can reuse the existing publication entry without
-changing current hosts. Its original native archive must remain inside the
-outer admission release fence through both later workers; closing it and passing
-an outer cleanup boolean to this logical custody is insufficient. Launch
-uncertainty and late archive mutation must retain admission.
+The separate fixed generated-fixture composition now owns and archives creation
+of the **first native fixture child** under the same admission, before
+observation/review/acquisition, and verifies its original handles and cleanup
+before this retained rendezvous. It reuses the fixed existing publication entry
+through a separate guarded launcher. Its original native archive remains inside
+the outer admission release fence through both later workers. Closing it and
+passing an outer cleanup boolean remains insufficient; launch uncertainty and
+late archive mutation retain admission. The exact optional attachment does not
+alter the original logical-only custody profile. See its dedicated guide for
+the new tests and current limitations.
 
 A deliberate bounded human-wait acquisition profile remains a separate gate: the
 30-second desktop-review subclass is intentionally rejected by the current exact
@@ -126,8 +132,9 @@ payload publication remain separate gates, including partial-write, crash,
 lost-receipt, expiry/revocation and restart semantics. No historical discard fact
 activates them. The only current protected-operation claim remains delivery
 through the existing fixture protected-reader path. This milestone proves no
-native file acquisition, payload delivery, installed-app identity, immutable
-contents, global durable at-most-once behavior or prevention of direct Windows
+native file acquisition in its logical-only profile, payload delivery,
+installed-app identity, immutable contents, global durable at-most-once behavior
+or prevention of direct Windows
 access. Application/AI intent does not equal human permission. SecurityBrightness
 remains the authorization/human-control boundary, not an arbitrary executor or
 antivirus.
