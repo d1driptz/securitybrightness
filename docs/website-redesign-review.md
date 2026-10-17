@@ -17,13 +17,14 @@ Branch: `website-redesign-preview`
 - Homepage anchor navigation accounts for the sticky header.
 - No live product download or unsupported “protected” status is offered.
 
-## Latest scanner visual refresh (pending CI verification)
+## Scanner visual refresh and browser verification
 - Commit `0a187d80` changes only scanner presentation: navy/teal surfaces, control contrast and compact mobile upload layout.
 - The scanner's matching logic was not intentionally changed.
-- The GitHub Actions result for this latest commit has **not yet been confirmed**. Recheck Chromium smoke tests and download fresh screenshot artifacts before approving the visual refresh.
-- Previously supplied screenshots showed the pre-refresh scanner and cannot validate the new appearance.
+- GitHub Actions Chromium smoke test run #15 passed at commit `b8685b1`, following run #14's outdated navigation-link locator failure. The test now targets the current accessible link name, `Return to main website`.
+- Screenshot artifacts were supplied and the owner approved the visual direction. This is design approval, not approval to publish or evidence of comprehensive security testing.
+- The browser scanner is intentionally limited to `.txt`, `.log` and `.js` files up to 1 MiB. Keep this limit and the experimental scope until additional file formats, larger sizes and performance have been tested.
 
-## Remaining visual, accessibility and release verification
+## Remaining accessibility and release verification
 - Visually inspect narrow phone widths (320, 375, 390px) for overlap and clipped controls; automated horizontal-overflow checks passed in Chromium.
 - Visually inspect desktop widths (768, 1024, 1440px) for card, navigation and hero readability; automated horizontal-overflow checks passed in Chromium.
 - Keyboard navigation order, visible focus and screen reader headings/landmarks.
@@ -55,4 +56,4 @@ python tools/website_smoke.py
 
 The script opens the preview and scanner directly from the local checkout, checks navigation and horizontal overflow at 320, 375, 390, 768, 1024 and 1440 pixels, and fails on JavaScript page errors. It exercises synthetic browser file uploads for one private-key header match and an invalid extension, but does **not** establish comprehensive scanner correctness, cover Safari, or substitute for visual/accessibility review.
 
-**Status:** GitHub Actions workflow runs #3, #5 and #6 passed, as confirmed by the repository owner's GitHub Actions screenshots. Run #6 passed on commit `d4d69a0` and included six Chromium viewport widths, navigation, JavaScript error checks, no-file handling, synthetic private-key detection, invalid extension rejection, oversized file rejection, benign text handling and HTML-like filename handling. These are automated smoke checks, not full browser or security certification. Visual inspection, Safari, additional scanner paths, accessibility checks and owner approval remain pending.
+**Status:** The latest owner-provided run #15 passed at commit `b8685b1`; run #14 failed because its navigation locator expected the former link label, then the test was updated. Automated checks cover six Chromium viewport widths, navigation, JavaScript page errors, no-file handling, synthetic private-key detection, invalid extension rejection, oversized file rejection, benign text handling and HTML-like filename handling. The owner likes the preview design. These are automated smoke checks, not full browser or security certification. Safari, additional scanner paths, accessibility checks, final publication preparation and explicit publication approval remain pending.
