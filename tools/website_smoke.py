@@ -68,6 +68,35 @@ def main():
             page.get_by_role("button", name="Scan file contents").click()
             assert "Not analyzed" in page.locator("#summaryNote").inner_text()
 
+            # Oversized input must be rejected before parsing.
+            page.locator("#fileInput").set_input_files({
+                "name": "oversized.txt",
+                "mimeType": "text/plain",
+                "buffer": b"x" * (1024 * 1024 + 1),
+            })
+            page.get_by_role("button", name="Scan file contents").click()
+            assert "Not analyzed" in page.locator("#summaryNote").inner_text()
+
+            # Benign text must not be reported as proof of safety.
+            page.locator("#fileInput").set_input_files({
+                "name": "benign.txt",
+                "mimeType": "text/plain",
+                "buffer": b"Just a normal sentence with no credential patterns.",
+            })
+            page.get_by_role("button", name="Scan file contents").click()
+            page.get_by_text("Not a safety verdict", exact=False).first.wait_for()
+            assert "High 0" in page.locator("#summary").inner_text()
+
+            # Untrusted filenames should remain text, not executable markup.
+            page.locator("#fileInput").set_input_files({
+                "name": "<img src=x onerror=alert(1)>.txt",
+                "mimeType": "text/plain",
+                "buffer": b"Plain text.",
+            })
+            page.get_by_role("button", name="Scan file contents").click()
+            page.get_by_text("Not a safety verdict", exact=False).first.wait_for()
+            assert page.locator("#fileStatus img").count() == 0
+
             page.get_by_role("link", name="Back to homepage").click()
             page.get_by_role("heading", name="Your Security. Your Choice.").wait_for()
             page.close()
