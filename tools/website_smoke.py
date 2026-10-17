@@ -6,17 +6,29 @@ Run from repository root: python tools/website_smoke.py
 These tests do not start or modify the SecurityBrightness Python core.
 """
 from pathlib import Path
+import os
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 HOME = (ROOT / "website-preview.html").as_uri()
 SCANNER = (ROOT / "scanner.html").as_uri()
+SCREENSHOTS = ROOT / "website-review-screenshots"
 
 
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         try:
+            if os.environ.get("WEBSITE_CAPTURE_SCREENSHOTS") == "1":
+                SCREENSHOTS.mkdir(exist_ok=True)
+                for label, url in (("homepage", HOME), ("scanner", SCANNER)):
+                    for width in (390, 1440):
+                        shot = browser.new_page(viewport={"width": width, "height": 900},
+                                                device_scale_factor=1)
+                        shot.goto(url)
+                        shot.screenshot(path=str(SCREENSHOTS / f"{label}-{width}px.png"),
+                                        full_page=True)
+                        shot.close()
             for width in (320, 375, 390, 768, 1024, 1440):
                 page = browser.new_page(viewport={"width": width, "height": 850})
                 errors = []
