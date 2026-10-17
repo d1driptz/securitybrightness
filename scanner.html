@@ -279,6 +279,29 @@
     .site-navigation a { color: #b5f0e1; text-decoration: none; }
     .site-navigation a:focus-visible { outline: 3px solid #b5f0e1; outline-offset: 3px; }
     @media (max-width: 480px) { body { padding-top: 120px; } .wrapper { padding: 12px; } .card { padding: 18px; } .hero { padding: 22px 18px 12px; } }
+
+    /* Preview visual alignment with the SecurityBrightness homepage. */
+    body { background: #0b1323; color: #f1f5fb; }
+    .container { background: #101d30; border: 1px solid #26384c; border-radius: 18px; box-shadow: 0 20px 55px rgba(0,0,0,.18); }
+    .hero { text-align: left; padding-bottom: 26px; }
+    .hero h1 { color: #f1f5fb; background: none; -webkit-text-fill-color: currentColor; font-size: clamp(1.8rem,3vw,2.7rem); }
+    .hero p { margin: 14px 0 0; color: #b8c8d8; line-height: 1.6; }
+    .hero .note { color: #b8c8d8; }
+    .card { background: #142239; border: 1px solid #293b50; border-radius: 12px; box-shadow: none; margin: 0 16px 16px; }
+    .card:first-of-type { border-top: 1px solid #293b50; }
+    .note { color: #b8c8d8; }
+    .file-input { background: #f8fafc; color: #152238; }
+    .button { background: #83d8c8; color: #09212b; }
+    .button:hover { box-shadow: 0 10px 24px rgba(131,216,200,.16); }
+    .button:focus-visible, .file-input:focus-visible { outline: 3px solid #83d8c8; outline-offset: 3px; }
+    .site-navigation { border-bottom: 1px solid #293b50; }
+    .result-card { color: #152238; }
+    @media (max-width: 720px) {
+      .upload-row { gap: 12px; }
+      .file-input { flex: 0 1 auto; width: 100%; min-height: 54px; }
+      .button { width: 100%; }
+      .card { margin: 0 10px 12px; }
+    }
   </style>
 </head>
 
