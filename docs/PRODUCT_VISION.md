@@ -18,6 +18,22 @@ A separate [File Security prototype](file-security.md) now reviews an explicitly
 
 The desktop also offers [read-only decision history](decision-history.md), a bounded view of existing local audit summaries. It is not comprehensive security history, current authority state, tamper-proof evidence or proof of execution.
 
+## Development status clarification (preview-branch documentation update)
+
+This section distinguishes the working product surface from additional experimental work. It does not declare the broader product capabilities complete. It is a documentation snapshot on the separate website preview branch; Codex's active development branch may have newer implementation details and remains the source to verify before merging.
+
+**Working authorization foundation.** The Python core, loopback HTTP service, registered-application SDK, action/scope checks, terminal and optional desktop human review, local decision audit, opt-in locked-restoration registry persistence, and bounded desktop views are implemented within their documented trust model. They do not by themselves intercept arbitrary Windows applications or enforce every downstream operation.
+
+**Narrow controlled-operation evidence.** A cooperating, controlled fixture-reader path has demonstrated limited enforcement of a selected operation. Its scope is deliberately narrow; it is not OS-wide application control, a general execution broker, or evidence that unmodified third-party applications cannot bypass SecurityBrightness.
+
+**Inactive broker research.** Additional isolated Windows fixture-host and broker prototypes exercise original-source ownership, review, revocation, native-process retirement and fail-closed cleanup. These are diagnostic development paths, not selected by the normal service or desktop workflow. The newer fixture-host path explicitly releases **zero application bytes** even on ALLOW. Passing tests here do not mean application-facing payload delivery, broad integration or a finished protected workflow is available.
+
+**Still required for the intended platform.** Structured effect-bound and time/resource-limited authority in a supported end-to-end integration; trustworthy human identity beyond the trusted local operator assumption; asynchronous user review and notifications; OS-backed storage and recovery; mature adapters; comprehensive, tamper-evident security history; and a usable installed application with clearly demonstrated protection coverage remain incomplete or require further integration and evaluation.
+
+**Documentation rule.** The table below describes broad product outcomes and gaps in the established application surface, not a claim that no experimental implementation exists anywhere in the repository. Before changing a gap to “implemented,” verify that the feature is integrated into a supported workflow, that its enforcement boundary is explicit, and that tests and user-facing evidence support the claim.
+
+**Product identity.** The public-facing headline is **“Your Security. Your Choice.”** The technical invariant remains **“Application/AI intent does not equal human permission.”** Neither replaces the wider mission to protect people, devices, applications, data and security boundaries.
+
 ## 2. Planned product architecture
 
 The following are intended product capabilities, not existing features or delivery dates. Build them in cohesive increments with explicit security decisions where needed.
