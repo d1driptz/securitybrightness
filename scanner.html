@@ -294,13 +294,13 @@
         <input id="fileInput" class="file-input" type="file" accept=".txt,.log,.js,text/plain,application/javascript" />
         <button type="button" class="button" onclick="scan()">Scan file contents</button>
       </div>
-      <div id="fileStatus" class="note" style="margin-top: 12px;">Select a file and click Scan.</div>
+      <div id="fileStatus" class="note" role="status" aria-live="polite" aria-atomic="true" style="margin-top: 12px;">Select a file and click Scan.</div>
     </div>
 
     <div class="card" id="summaryCard">
       <div class="section-title">
         <h2>Summary</h2>
-        <span class="note" id="summaryNote">Select a file to start a local pattern review.</span>
+        <span class="note" id="summaryNote" role="status" aria-live="polite" aria-atomic="true">Select a file to start a local pattern review.</span>
       </div>
       <div class="summary-grid" id="summary"></div>
     </div>
@@ -310,7 +310,7 @@
         <h2>Scan results</h2>
         <span class="note">Heuristic patterns are grouped by review priority, with locations and redacted evidence. Matches may be benign; credential validity and threat severity are not verified.</span>
       </div>
-      <div id="result" class="results"></div>
+      <div id="result" class="results" aria-label="Pattern review findings"></div>
     </div>
   </div>
 </div>
