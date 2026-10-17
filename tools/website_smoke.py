@@ -42,6 +42,7 @@ def main():
                 )
                 page.get_by_role("link", name="Open experimental scanner").click()
                 page.get_by_role("button", name="Scan file contents").wait_for()
+                assert page.url == SCANNER, f"Scanner link opened unexpected page at {width}px: {page.url}"
                 overflow = page.evaluate("""() => ({
                     viewport: innerWidth,
                     document: document.documentElement.scrollWidth,
@@ -113,8 +114,9 @@ def main():
 
             page.get_by_role("link", name="Return to main website").click()
             page.get_by_role("heading", name="Your Security. Your Choice.").wait_for()
+            assert page.url == HOME, f"Return link opened unexpected homepage: {page.url}"
             page.close()
-            print("Website browser smoke tests passed at 6 viewport widths.")
+            print(f"Website {'release candidate' if RELEASE_CANDIDATE else 'preview'} browser smoke tests passed at 6 viewport widths.")
         finally:
             browser.close()
 
