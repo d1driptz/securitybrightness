@@ -109,7 +109,7 @@ def main():
             page.get_by_text("Not a safety verdict", exact=False).first.wait_for()
             assert page.locator("#fileStatus img").count() == 0
 
-            page.get_by_role("link", name="Back to homepage").click()
+            page.get_by_role("link", name="Return to main website").click()
             page.get_by_role("heading", name="Your Security. Your Choice.").wait_for()
             page.close()
             print("Website browser smoke tests passed at 6 viewport widths.")
