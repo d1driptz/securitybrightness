@@ -28,8 +28,17 @@ def main():
                 )
                 page.get_by_role("link", name="Open experimental scanner").click()
                 page.get_by_role("button", name="Scan file contents").wait_for()
-                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (
-                    f"Scanner horizontal overflow at {width}px"
+                overflow = page.evaluate("""() => ({
+                    viewport: innerWidth,
+                    document: document.documentElement.scrollWidth,
+                    offenders: [...document.querySelectorAll('body *')]
+                        .filter(el => el.getBoundingClientRect().right > innerWidth + 1)
+                        .slice(0, 6)
+                        .map(el => ({tag: el.tagName, className: String(el.className).slice(0, 80),
+                                     right: Math.round(el.getBoundingClientRect().right)}))
+                })""")
+                assert overflow["document"] <= overflow["viewport"], (
+                    f"Scanner horizontal overflow at {width}px: {overflow}"
                 )
                 assert not errors, f"JavaScript errors at {width}px: {errors}"
                 page.close()
