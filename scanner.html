@@ -288,6 +288,14 @@
     .hero p { margin: 14px 0 0; color: #b8c8d8; line-height: 1.6; }
     .hero .note { color: #b8c8d8; }
     .card { background: #142239; border: 1px solid #293b50; border-radius: 12px; box-shadow: none; margin: 0 16px 16px; }
+    .wrapper { box-sizing: border-box; }
+    .section-title, .section-title h2 { color: #f1f5fb; }
+    .section-title { flex-wrap: wrap; }
+    .file-input { box-sizing: border-box; min-width: 0; max-width: 100%; }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pill { min-width: 0; overflow-wrap: anywhere; }
+    .result-snippet { overflow-wrap: anywhere; }
+    @media (max-width: 480px) { .summary-grid { grid-template-columns: 1fr; } .hero { padding: 24px 18px 16px; } }
     .card:first-of-type { border-top: 1px solid #293b50; }
     .note { color: #b8c8d8; }
     .file-input { background: #f8fafc; color: #152238; }
