@@ -36,8 +36,29 @@ def main():
 
             page = browser.new_page()
             page.goto(SCANNER)
+            # No file must show a clear error, not a misleading clean result.
             page.get_by_role("button", name="Scan file contents").click()
-            assert page.locator("#fileStatus").count() == 1
+            page.get_by_role("heading", name="No file selected").wait_for()
+
+            # Use synthetic, deliberately invalid key-like text, never real credentials.
+            page.locator("#fileInput").set_input_files({
+                "name": "sample.txt",
+                "mimeType": "text/plain",
+                "buffer": b"-----BEGIN PRIVATE KEY-----\\nFAKE-TEST-DATA\\n",
+            })
+            page.get_by_role("button", name="Scan file contents").click()
+            page.get_by_text("Private-key header pattern matched.", exact=False).first.wait_for()
+            assert "Not a safety verdict" in page.locator("#summaryNote").inner_text()
+
+            # A disallowed file type must be rejected without analysis.
+            page.locator("#fileInput").set_input_files({
+                "name": "sample.exe",
+                "mimeType": "application/octet-stream",
+                "buffer": b"not an executable",
+            })
+            page.get_by_role("button", name="Scan file contents").click()
+            assert "Not analyzed" in page.locator("#summaryNote").inner_text()
+
             page.get_by_role("link", name="Back to homepage").click()
             page.get_by_role("heading", name="Your Security. Your Choice.").wait_for()
             page.close()
