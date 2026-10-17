@@ -22,7 +22,7 @@ Branch: `website-redesign-preview`
 - Visually inspect desktop widths (768, 1024, 1440px) for card, navigation and hero readability; automated horizontal-overflow checks passed in Chromium.
 - Keyboard navigation order, visible focus and screen reader headings/landmarks.
 - Text contrast and zoom at 200%.
-- Scanner file-size limit, no-match path and additional match types; no-file, synthetic private-key match and invalid extension paths passed automated Chromium checks.
+- Additional scanner match types and dismissal behaviour remain to be checked; file-size rejection, no-match handling, no-file handling, synthetic private-key match, invalid extension rejection and HTML-like filename rendering passed automated Chromium checks.
 - Scanner dismissal behaviour and safety of rendered filenames and excerpts.
 - Navigation and external documentation links.
 - Browser console errors, including mobile Safari.
@@ -49,4 +49,4 @@ python tools/website_smoke.py
 
 The script opens the preview and scanner directly from the local checkout, checks navigation and horizontal overflow at 320, 375, 390, 768, 1024 and 1440 pixels, and fails on JavaScript page errors. It exercises synthetic browser file uploads for one private-key header match and an invalid extension, but does **not** establish comprehensive scanner correctness, cover Safari, or substitute for visual/accessibility review.
 
-**Status:** GitHub Actions workflow run #3 passed on commit `17b58c7` (as confirmed by the repository owner's GitHub Actions screenshots). The run exercised the smoke-test script version present at that commit, including six Chromium viewport widths, navigation, JavaScript errors, no-file handling, synthetic private-key detection and invalid extension rejection. The later diagnostics-only test-script change was not part of that run. Visual inspection, Safari, deeper scanner checks and owner approval remain pending.
+**Status:** GitHub Actions workflow runs #3, #5 and #6 passed, as confirmed by the repository owner's GitHub Actions screenshots. Run #6 passed on commit `d4d69a0` and included six Chromium viewport widths, navigation, JavaScript error checks, no-file handling, synthetic private-key detection, invalid extension rejection, oversized file rejection, benign text handling and HTML-like filename handling. These are automated smoke checks, not full browser or security certification. Visual inspection, Safari, additional scanner paths, accessibility checks and owner approval remain pending.
