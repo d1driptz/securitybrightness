@@ -10,9 +10,11 @@ import os
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-HOME = (ROOT / "website-preview.html").as_uri()
-SCANNER = (ROOT / "scanner.html").as_uri()
-SCREENSHOTS = ROOT / "website-review-screenshots"
+RELEASE_CANDIDATE = os.environ.get("WEBSITE_RELEASE_CANDIDATE") == "1"
+SITE = ROOT / "website-release-candidate" if RELEASE_CANDIDATE else ROOT
+HOME = (SITE / ("index.html" if RELEASE_CANDIDATE else "website-preview.html")).as_uri()
+SCANNER = (SITE / "scanner.html").as_uri()
+SCREENSHOTS = ROOT / ("website-release-screenshots" if RELEASE_CANDIDATE else "website-review-screenshots")
 
 
 def main():
