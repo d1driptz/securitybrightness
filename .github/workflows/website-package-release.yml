@@ -1,0 +1,38 @@
+name: Prepare website publication artifact
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate isolated website release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s website-release-candidate/index.html
+          test -s website-release-candidate/scanner.html
+          grep -Fq 'href="./scanner.html"' website-release-candidate/index.html
+          grep -Fq 'href="./index.html"' website-release-candidate/scanner.html
+          ! grep -Fq 'href="./website-preview.html"' website-release-candidate/scanner.html
+          grep -Fq 'maximum 1 MiB' website-release-candidate/scanner.html
+      - name: Package only website HTML files
+        shell: bash
+        run: |
+          mkdir -p publication-artifact
+          cp website-release-candidate/index.html publication-artifact/index.html
+          cp website-release-candidate/scanner.html publication-artifact/scanner.html
+          test "$(find publication-artifact -maxdepth 1 -type f | wc -l)" -eq 2
+      - name: Upload publication candidate (does not deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: securitybrightness-website-release-candidate
+          path: publication-artifact/
+          if-no-files-found: error
+          retention-days: 14
