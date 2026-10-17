@@ -17,6 +17,12 @@ Branch: `website-redesign-preview`
 - Homepage anchor navigation accounts for the sticky header.
 - No live product download or unsupported “protected” status is offered.
 
+## Latest scanner visual refresh (pending CI verification)
+- Commit `0a187d80` changes only scanner presentation: navy/teal surfaces, control contrast and compact mobile upload layout.
+- The scanner's matching logic was not intentionally changed.
+- The GitHub Actions result for this latest commit has **not yet been confirmed**. Recheck Chromium smoke tests and download fresh screenshot artifacts before approving the visual refresh.
+- Previously supplied screenshots showed the pre-refresh scanner and cannot validate the new appearance.
+
 ## Remaining visual, accessibility and release verification
 - Visually inspect narrow phone widths (320, 375, 390px) for overlap and clipped controls; automated horizontal-overflow checks passed in Chromium.
 - Visually inspect desktop widths (768, 1024, 1440px) for card, navigation and hero readability; automated horizontal-overflow checks passed in Chromium.
